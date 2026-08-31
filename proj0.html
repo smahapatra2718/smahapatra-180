@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<title>Becoming Friends with Your Camera — CS 180 Project 0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.remove('no-js');</script>
+</head>
+<body>
+
+<nav class="section-index" aria-label="Sections">
+  <ul class="section-index-list">
+    <li><a href="index.html" data-heading-level="1">← All projects</a></li>
+    <li><a href="#selfie" data-heading-level="1">Part 1: Selfie</a></li>
+    <li><a href="#facade" data-heading-level="1">Part 2: Facade</a></li>
+    <li><a href="#dolly" data-heading-level="1">Part 3: Dolly zoom</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+
+  <div class="section base-row title-row">
+    <div class="base-col">
+      <p class="kicker">CS 180 · Project 0</p>
+      <h1 class="title">Becoming Friends with Your Camera</h1>
+      <p class="meta-line meta-line--subtitle">
+        <span class="author-text">Samarth Mahapatra</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="section add-top-padding" id="selfie">
+    <h1>Part 1: Selfie: The Wrong Way vs. The Right Way</h1>
+    <p class="placeholder">I took two photos of my friend: one wide shot from close up, and one zoomed shot from far away.</p>
+
+    <figure class="viewset">
+      <div class="viewset-controls" role="group" aria-label="Comparison view">
+        <button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+        <button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+      </div>
+
+      <div class="viewset-panel" data-panel="split">
+        <!-- Opens split on the face's own axis of symmetry (measured at 50.8%), so
+             the left half of the close portrait joins the right half of the far one. -->
+        <div class="compare compare--portrait" style="--pos:50.8%">
+          <div class="layer"><img src="assets/proj00/web/face-close.jpg" alt=""></div>
+          <div class="layer layer-top"><img src="assets/proj00/web/face-far-matched.jpg" alt=""></div>
+          <span class="compare-label compare-label--a">Close</span>
+          <span class="compare-label compare-label--b">Far</span>
+          <div class="compare-divider" aria-hidden="true"></div>
+          <input type="range" min="0" max="100" step="0.1" value="50.8" aria-label="Compare the close portrait with the distant portrait">
+        </div>
+      </div>
+
+      <div class="viewset-panel" data-panel="pair">
+        <div class="pair">
+          <div>
+            <div class="frame" style="aspect-ratio: 3 / 4">
+              <img src="assets/proj00/web/face-close.jpg" alt="">
+            </div>
+            <p class="caption"><span class="placeholder">Close up.</span></p>
+          </div>
+          <div>
+            <div class="frame" style="aspect-ratio: 3 / 4">
+              <img src="assets/proj00/web/face-far.jpg" alt="">
+            </div>
+            <p class="caption"><span class="placeholder">Far away.</span></p>
+          </div>
+        </div>
+      </div>
+      <p class="caption"><span class="placeholder">"Veen".</span></p>
+    </figure>
+
+    <h2>What changed</h2>
+    <p class="placeholder">Your analysis.</p>
+  </div>
+
+  <div class="section add-top-padding" id="facade">
+    <h1>Part 2: Architectural Perspective Compression</h1>
+    <p class="placeholder">Setup and what you did.</p>
+
+    <figure class="viewset">
+      <div class="viewset-controls" role="group" aria-label="Comparison view">
+        <button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+        <button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+      </div>
+
+      <div class="viewset-panel" data-panel="split">
+        <div class="compare" style="--pos:50%">
+          <div class="layer layer--empty"><span>Far away, zoomed in</span></div>
+          <div class="layer layer--empty layer-top"><span>Walked up, no zoom</span></div>
+          <span class="compare-label compare-label--a">Far</span>
+          <span class="compare-label compare-label--b">Close</span>
+          <div class="compare-divider" aria-hidden="true"></div>
+          <input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare the distant zoomed photograph with the close wide photograph">
+        </div>
+      </div>
+
+      <div class="viewset-panel" data-panel="pair">
+        <div class="pair">
+          <div>
+            <div class="frame frame--empty"><span>Far away, zoomed in</span></div>
+            <p class="caption"><span class="placeholder">Far away, zoomed in.</span></p>
+          </div>
+          <div>
+            <div class="frame frame--empty"><span>Close up, no zoom</span></div>
+            <p class="caption"><span class="placeholder">Close up, no zoom.</span></p>
+          </div>
+        </div>
+      </div>
+
+      <p class="caption"><span class="placeholder">Caption.</span></p>
+    </figure>
+
+    <h2>What changed</h2>
+    <p class="placeholder">Your analysis.</p>
+  </div>
+
+  <div class="section add-top-padding" id="dolly">
+    <h1>Part 3: The Dolly Zoom</h1>
+    <p class="placeholder">Placed a tomato on my countertop and photographed it at progressively increasing distances while zooming out to keep it at a (relatively) constant size.</p>
+
+    <figure class="player" data-duration="200">
+      <div class="frame player-stage" style="aspect-ratio: 4 / 3">
+          <img src="assets/proj00/web/dolly-1.jpg" alt="" class="is-current">
+          <img src="assets/proj00/web/dolly-2.jpg" alt="">
+          <img src="assets/proj00/web/dolly-3.jpg" alt="">
+          <img src="assets/proj00/web/dolly-4.jpg" alt="">
+          <img src="assets/proj00/web/dolly-5.jpg" alt="">
+          <img src="assets/proj00/web/dolly-6.jpg" alt="">
+          <img src="assets/proj00/web/dolly-7.jpg" alt="">
+      </div>
+
+      <div class="player-bar">
+        <button type="button" class="player-toggle" aria-label="Pause">
+          <span class="player-toggle-icon" aria-hidden="true"></span>
+          <span class="player-toggle-text">Pause</span>
+        </button>
+        <span class="player-readout">
+          Frame <b class="player-current">1</b> of 7
+        </span>
+      </div>
+
+      <div class="filmstrip" role="group" aria-label="Jump to a frame">
+        <button type="button" class="filmstrip-btn is-current" data-frame="1" aria-label="Frame 1" aria-pressed="true">
+          <img src="assets/proj00/web/dolly-thumb-1.jpg" alt="">
+          <span class="filmstrip-n">1</span>
+        </button>
+        <button type="button" class="filmstrip-btn" data-frame="2" aria-label="Frame 2" aria-pressed="false">
+          <img src="assets/proj00/web/dolly-thumb-2.jpg" alt="">
+          <span class="filmstrip-n">2</span>
+        </button>
+        <button type="button" class="filmstrip-btn" data-frame="3" aria-label="Frame 3" aria-pressed="false">
+          <img src="assets/proj00/web/dolly-thumb-3.jpg" alt="">
+          <span class="filmstrip-n">3</span>
+        </button>
+        <button type="button" class="filmstrip-btn" data-frame="4" aria-label="Frame 4" aria-pressed="false">
+          <img src="assets/proj00/web/dolly-thumb-4.jpg" alt="">
+          <span class="filmstrip-n">4</span>
+        </button>
+        <button type="button" class="filmstrip-btn" data-frame="5" aria-label="Frame 5" aria-pressed="false">
+          <img src="assets/proj00/web/dolly-thumb-5.jpg" alt="">
+          <span class="filmstrip-n">5</span>
+        </button>
+        <button type="button" class="filmstrip-btn" data-frame="6" aria-label="Frame 6" aria-pressed="false">
+          <img src="assets/proj00/web/dolly-thumb-6.jpg" alt="">
+          <span class="filmstrip-n">6</span>
+        </button>
+        <button type="button" class="filmstrip-btn" data-frame="7" aria-label="Frame 7" aria-pressed="false">
+          <img src="assets/proj00/web/dolly-thumb-7.jpg" alt="">
+          <span class="filmstrip-n">7</span>
+        </button>
+      </div>
+      <p class="caption"><span class="placeholder">A tomato.</span></p>
+    </figure>
+
+    
+    <h2>What was hard</h2>
+    <p class="placeholder">Your analysis.</p>
+  </div>
+
+  <p class="colophon">All photos were shot on an iPhone 15 Pro Max.</p>
+
+  <footer class="foot">
+    <a href="index.html">← All projects</a>
+    <span>Samarth Mahapatra · CS 180</span>
+  </footer>
+
+</div>
+
+<script>
+// Drag-to-compare. The control is a range input, so keyboard and touch work
+// without extra handling; the thumb is transparent and the divider is visible.
+// Frame player. Runs the seven stills on the same ping-pong cadence as the
+// GIF, so the readout and filmstrip always name the frame on screen — which a
+// real <img> GIF cannot report. Click a thumbnail to pause on that frame.
+document.querySelectorAll('.player').forEach(function (p) {
+  var imgs   = p.querySelectorAll('.player-stage img');
+  var btns   = p.querySelectorAll('.filmstrip-btn');
+  var toggle = p.querySelector('.player-toggle');
+  var label  = p.querySelector('.player-toggle-text');
+  var out    = p.querySelector('.player-current');
+  var step   = Number(p.dataset.duration) || 200;
+
+  // 1..7 then back down, so the loop reads as one continuous camera move.
+  var order = [1,2,3,4,5,6,7,6,5,4,3,2];
+  var at = 0, timer = null;
+
+  function paint(frame) {
+    imgs.forEach(function (im, i) { im.classList.toggle('is-current', i === frame - 1); });
+    btns.forEach(function (b) {
+      var on = Number(b.dataset.frame) === frame;
+      b.classList.toggle('is-current', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (out) out.textContent = frame;
+  }
+
+  function tick() { at = (at + 1) % order.length; paint(order[at]); }
+
+  function play() {
+    if (timer) return;
+    timer = setInterval(tick, step);
+    p.classList.add('is-playing');
+    if (label) label.textContent = 'Pause';
+    toggle.setAttribute('aria-label', 'Pause');
+  }
+
+  function pause() {
+    clearInterval(timer);
+    timer = null;
+    p.classList.remove('is-playing');
+    if (label) label.textContent = 'Play';
+    toggle.setAttribute('aria-label', 'Play');
+  }
+
+  toggle.addEventListener('click', function () { timer ? pause() : play(); });
+
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var frame = Number(b.dataset.frame);
+      pause();
+      at = order.indexOf(frame);
+      paint(frame);
+    });
+  });
+
+  paint(1);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    pause();
+  } else {
+    play();
+  }
+});
+
+// Figure view toggle: split comparison, or the two photographs on their own.
+// Panels start visible so the page still shows everything without JS.
+document.querySelectorAll('.viewset').forEach(function (set) {
+  var btns = set.querySelectorAll('.viewset-btn');
+  var panels = set.querySelectorAll('.viewset-panel');
+  var show = function (view) {
+    panels.forEach(function (p) { p.hidden = p.dataset.panel !== view; });
+    btns.forEach(function (b) {
+      var on = b.dataset.view === view;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { show(b.dataset.view); });
+  });
+  show('split');
+});
+
+document.querySelectorAll('.compare').forEach(function (el) {
+  var input = el.querySelector('input[type="range"]');
+  if (!input) return;
+  var sync = function () { el.style.setProperty('--pos', input.value + '%'); };
+  input.addEventListener('input', sync);
+  sync();
+});
+
+// Highlight the section index entry for whatever is on screen.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.section-index a[href^="#"]'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.remove('is-active'); });
+      if (byId[e.target.id]) byId[e.target.id].classList.add('is-active');
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var s = document.getElementById(id);
+    if (s) obs.observe(s);
+  });
+})();
+</script>
+
+</body>
+</html>

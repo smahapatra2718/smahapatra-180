@@ -1,0 +1,679 @@
+/* CS 180 — Samarth Mahapatra
+   Design language adopted from the eyerobot2 project page. */
+
+body {
+    min-height: 100%;
+    padding: 2em 2em;
+    background-color: #fff;
+    font-family: 'Open Sans', sans-serif;
+    color: #333;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+:root {
+    --content-width: 800px;
+    --accent: #488af3;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+a { color: inherit; }
+
+:focus-visible { outline: 2px solid #151719; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    html { scroll-behavior: auto; }
+}
+
+html { scroll-behavior: smooth; }
+
+/* ---- fixed section index ------------------------------------------- */
+
+.section-index {
+    position: fixed;
+    z-index: 20;
+    top: 50%;
+    transform: translateY(-50%);
+    left: max(18px, calc(50vw - (var(--content-width) / 2) - 190px));
+    width: 150px;
+    padding: 2px 18px 2px 0;
+    border-right: 1px solid #e2e2e2;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+}
+
+.section-index-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.section-index a {
+    display: block;
+    color: #aaa;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.3;
+    text-decoration: none;
+    transition: color 140ms ease;
+}
+
+.section-index a[data-heading-level="1"] { color: #929292; font-weight: 500; }
+.section-index a[data-heading-level="2"] { padding-left: 8px; }
+
+.section-index a:hover,
+.section-index a:focus-visible { color: #555; }
+
+.section-index a.is-active { color: #292929; }
+
+@media (max-width: 1179px) { .section-index { display: none; } }
+
+/* ---- sections ------------------------------------------------------ */
+
+.section {
+    display: block;
+    max-width: var(--content-width);
+    margin: 0 auto;
+}
+
+.section h1:not(.tldr),
+.section h2,
+.section h3 {
+    width: 100%;
+    text-align: left;
+}
+
+.section h1:not(.tldr) {
+    font-size: 32px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 14px;
+}
+
+.section h2 {
+    font-size: 22px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 34px 0 10px;
+}
+
+.section p { margin: 0 0 16px; }
+.section p:last-child { margin-bottom: 0; }
+
+.add-top-padding { padding-top: 64px; }
+
+/* The first section sits closer to the title block than sections do to
+   each other — the title is its header, not a neighbour. */
+.title-row + .add-top-padding { padding-top: 28px; }
+
+/* ---- title block --------------------------------------------------- */
+
+.title-row {
+    padding-top: 40px;
+    padding-bottom: 24px;
+}
+
+.kicker {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #9aa0a6;
+    text-align: center;
+    margin: 0 0 22px;
+}
+
+.title {
+    margin: 0;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    color: #1a1a1a;
+    font-size: 56px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    text-align: center;
+    text-wrap: balance;
+}
+
+/* Set below the title with real air, not stacked against it. */
+.subheader {
+    margin: 26px auto 0;
+    max-width: 34ch;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    color: #555;
+    font-size: 24px;
+    line-height: 1.45;
+    font-weight: 400;
+    text-align: center;
+}
+
+/* One line carries every piece of metadata, rather than four stacked ones. */
+.meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: baseline;
+    column-gap: 10px;
+    row-gap: 2px;
+    margin: 40px 0 0;
+    font-size: 16px;
+    color: #666;
+    text-align: left;
+}
+
+/* Where there is no subtitle, the author line stands in its place and takes
+   its formatting. */
+.meta-line--subtitle {
+    justify-content: flex-start;
+    margin: 26px 0 0;
+    text-align: left;
+}
+
+.meta-line--subtitle .author-text {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 24px;
+    line-height: 1.45;
+    font-weight: 400;
+    color: #555;
+}
+
+.meta-sep { color: #c8ccd0; }
+
+.base-row {
+    display: flex;
+    flex-wrap: wrap;
+    text-align: center;
+    justify-content: center;
+}
+
+.base-col { position: relative; min-height: 1px; width: 100%; }
+
+.author-text {
+    font-family: 'Open Sans', sans-serif;
+    color: #1a1a1a;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.tldr {
+    font-family: 'Open Sans', sans-serif;
+    color: #333;
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 500;
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin: 0;
+}
+
+/* ---- media ---------------------------------------------------------- */
+
+figure { margin: 0 0 10px; }
+
+.frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    display: block;
+}
+
+.frame img,
+.frame video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.frame--empty {
+    display: grid;
+    place-items: center;
+    background: #f3f4f5;
+    border: 1px dashed #d5d8db;
+}
+
+.frame--empty span {
+    font-size: 13px;
+    color: #9aa0a6;
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.caption {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #666;
+    margin: 10px 0 0;
+    text-align: left;
+}
+
+.pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+/* Capture data under a figure — focal length and distance are the whole
+   argument of this project, so they are labelled, not buried in prose. */
+.exif {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 20px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #777;
+}
+
+.exif b { font-weight: 600; color: #333; }
+
+/* ---- drag-to-compare ------------------------------------------------ */
+
+.compare {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f3f4f5;
+    --pos: 50%;
+}
+
+.compare > .layer { position: absolute; inset: 0; }
+
+.compare > .layer img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.compare > .layer--empty { display: grid; place-items: center; background: #f3f4f5; }
+.compare > .layer--empty + .layer--empty { background: #e9ebee; }
+
+.compare > .layer--empty span { font-size: 13px; color: #9aa0a6; text-align: center; padding: 0 1rem; }
+
+.compare .layer-top { clip-path: inset(0 0 0 var(--pos)); }
+
+.compare-label {
+    position: absolute;
+    bottom: 12px;
+    font-size: 12px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4px 9px;
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+.compare-label--a { left: 12px; }
+.compare-label--b { right: 12px; }
+
+.compare input[type="range"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: ew-resize;
+}
+
+.compare input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 100%;
+    background: transparent;
+    cursor: ew-resize;
+}
+
+.compare input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    cursor: ew-resize;
+}
+
+.compare-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--pos);
+    width: 2px;
+    background: #fff;
+    pointer-events: none;
+}
+
+.compare-divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 32px;
+    height: 32px;
+    transform: translate(-50%, -50%);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.no-js .compare input[type="range"],
+.no-js .compare-divider,
+.no-js .compare-label { display: none; }
+
+.no-js .compare .layer-top { clip-path: none; position: static; }
+
+/* ---- project directory ---------------------------------------------- */
+
+.directory { list-style: none; margin: 0; padding: 0; width: 100%; }
+
+.dir-entry + .dir-entry { margin-top: 20px; }
+
+.dir-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+    gap: 0 28px;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    text-align: left;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+a.dir-link:hover { background: #f8f9fa; border-color: #cfd4d9; }
+
+.dir-num {
+    display: block;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9aa0a6;
+    margin-bottom: 6px;
+}
+
+.dir-title {
+    display: block;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 26px;
+    line-height: 1.25;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+}
+
+.dir-blurb { display: block; font-size: 15px; line-height: 1.6; color: #555; }
+
+.dir-meta { display: block; font-size: 13px; color: #888; margin-top: 12px; }
+
+.dir-thumb .frame { aspect-ratio: 4 / 3; margin: 0; }
+
+/* ---- footer ---------------------------------------------------------- */
+
+.foot {
+    max-width: var(--content-width);
+    margin: 60px auto 0;
+    padding-top: 20px;
+    border-top: 1px solid #e2e2e2;
+    font-size: 13px;
+    color: #888;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    justify-content: space-between;
+}
+
+.foot a { color: #888; }
+.foot a:hover { color: #333; }
+
+/* ---- responsive ------------------------------------------------------ */
+
+@media (max-width: 760px) {
+    body { padding: 1.5em 1.25em; }
+    .title { font-size: 32px; letter-spacing: -0.2px; }
+    .subheader { font-size: 19px; margin-top: 18px; }
+    .meta-line--subtitle .author-text { font-size: 18px; }
+    .meta-line { margin-top: 26px; font-size: 15px; }
+    .title-row { padding-top: 12px; padding-bottom: 8px; }
+    .section h1:not(.tldr) { font-size: 26px; }
+    .pair { grid-template-columns: 1fr; }
+    .dir-link { grid-template-columns: 1fr; }
+    .dir-thumb { margin-top: 18px; }
+    .add-top-padding { padding-top: 34px; }
+}
+
+/* ---- data table ------------------------------------------------------ */
+
+.data {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 0;
+    font-size: 14px;
+}
+
+.data th,
+.data td {
+    text-align: left;
+    padding: 9px 16px 9px 0;
+    border-bottom: 1px solid #e2e2e2;
+}
+
+.data th {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9aa0a6;
+}
+
+.data td { color: #555; }
+.data td:first-child { color: #333; font-weight: 600; }
+
+/* Portrait-orientation comparison — narrower than the column so the frame
+   does not tower over the text around it. */
+.compare--portrait {
+    aspect-ratio: 3 / 4;
+    max-width: 480px;
+    margin-inline: auto;
+}
+
+/* ---- placeholders ----------------------------------------------------- */
+/* Visibly unwritten, so nothing draft ships by accident. Delete the class
+   along with the text when you replace it. */
+
+.placeholder {
+    color: #b6bbc0;
+    font-style: italic;
+}
+
+p.placeholder,
+td.placeholder { font-style: italic; }
+
+/* ---- figure view toggle ----------------------------------------------- */
+
+.viewset-controls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.viewset-btn {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 13px;
+    color: #666;
+    background: #fff;
+    border: 1px solid #e2e2e2;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.viewset-btn:hover { background: #f3f4f5; color: #1a1a1a; }
+
+.viewset-btn.is-active {
+    background: #f3f4f5;
+    border-color: #cfd4d9;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* Without JS both panels stay on screen; the controls would do nothing. */
+.no-js .viewset-controls { display: none; }
+
+.viewset-panel + .viewset-panel { margin-top: 20px; }
+
+/* ---- colophon --------------------------------------------------------- */
+
+.colophon {
+    max-width: var(--content-width);
+    margin: 64px auto 0;
+    font-size: 14px;
+    color: #888;
+}
+
+/* ---- frame player ------------------------------------------------------ */
+/* The seven stills are stacked and cross-faded rather than animated as a GIF,
+   so the page can say which frame is showing. */
+
+.player-stage img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+}
+
+.player-stage img.is-current { opacity: 1; }
+
+.player-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.player-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 13px;
+    color: #666;
+    background: #fff;
+    border: 1px solid #e2e2e2;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.player-toggle:hover { background: #f3f4f5; color: #1a1a1a; border-color: #cfd4d9; }
+
+/* Play triangle by default; two bars while running. */
+.player-toggle-icon {
+    width: 9px;
+    height: 11px;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.is-playing .player-toggle-icon {
+    clip-path: polygon(0 0, 34% 0, 34% 100%, 0 100%, 0 0,
+                       66% 0, 100% 0, 100% 100%, 66% 100%);
+}
+
+.player-readout { font-size: 13px; color: #888; }
+.player-readout b { color: #1a1a1a; font-weight: 600; }
+
+.filmstrip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.filmstrip-btn {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    line-height: 0;
+}
+
+.filmstrip-btn img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    opacity: 0.45;
+    transition: opacity 0.15s ease;
+}
+
+.filmstrip-btn:hover img { opacity: 0.8; }
+.filmstrip-btn.is-current img { opacity: 1; }
+
+/* The current frame is outlined rather than tinted, so it stays legible
+   against whatever the photograph happens to be. */
+.filmstrip-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    transition: border-color 0.15s ease;
+    pointer-events: none;
+}
+
+.filmstrip-btn.is-current::after { border-color: var(--accent); }
+
+.filmstrip-n {
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 10px;
+    line-height: 1;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 3px;
+    padding: 3px 5px;
+}
+
+/* Without JS every frame would stack on top of the others; show the first. */
+.no-js .player-bar,
+.no-js .filmstrip { display: none; }
+
+@media (max-width: 760px) {
+    .filmstrip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
