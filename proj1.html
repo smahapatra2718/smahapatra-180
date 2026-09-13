@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<title>Colorizing the Prokudin-Gorskii Photo Collection — CS 180 Project 1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.remove('no-js');</script>
+</head>
+<body>
+
+<nav class="section-index" aria-label="Sections">
+  <ul class="section-index-list">
+    <li><a href="index.html" data-heading-level="1">← All projects</a></li>
+    <li><a href="#overview" data-heading-level="1">Overview</a></li>
+    <li><a href="#single-scale" data-heading-level="1">Single-scale search</a></li>
+    <li><a href="#pyramid" data-heading-level="1">Image pyramid</a></li>
+    <li><a href="#results" data-heading-level="1">Results</a></li>
+    <li><a href="#extras" data-heading-level="1">Bells &amp; whistles</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+
+  <div class="section base-row title-row">
+    <div class="base-col">
+      <p class="kicker">CS 180 · Project 1</p>
+      <h1 class="title">Images of the Russian Empire</h1>
+      <p class="meta-line meta-line--subtitle">
+        <span class="author-text">Samarth Mahapatra</span>
+      </p>
+      <p class="image-viewing-note">All images can be clicked on to view them in full resolution</p>
+    </div>
+  </div>
+
+  <div class="section add-top-padding" id="overview">
+    <h1>Overview</h1>
+    <p>The Prokudin-Gorskii photo collection were recorded onto a glass plate through a red, green, and blue filter. These gray scale images could then be tranformed, recolored, and then overlayed to produce a color image of the scene. In this project I explore how to take these raw glass exposures and turn them into colored images. Below is an example of the raw exposures and then the colored output after human manipulation</p>
+
+    <div class="overview-example">
+      <figure>
+        <img src="assets/proj01/web/overview-raw.jpg" data-fullres="assets/proj01/web/overview-raw-full.jpg" alt="">
+        <figcaption class="caption">Raw</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/proj01/web/overview-output.jpg" data-fullres="assets/proj01/web/overview-output-full.jpg" alt="">
+        <figcaption class="caption">Output</figcaption>
+      </figure>
+    </div>
+
+    <figure class="color-pipeline">
+      <div class="pipeline-scroll" tabindex="0" role="region" aria-label="Color reconstruction diagram">
+        <svg class="pipeline-diagram" viewBox="0 0 800 286" role="img" aria-label="Raw images split into B, G, and R channels. B stays fixed and is the reference for one alignment method, which estimates a separate delta x and delta y for G and for R. Only G and R are displaced; the channels are then recolored and combined.">
+          <defs>
+            <marker id="pipeline-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m1 1 5 3-5 3" fill="none" stroke="#a5abb2" stroke-width="1.2"/></marker>
+          <filter id="pipeline-tint-b" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0"/></filter>
+          <filter id="pipeline-tint-g" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0"/></filter>
+          <filter id="pipeline-tint-r" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/></filter>
+          </defs>
+          <text class="pipeline-label" x="42" y="20">Raw</text>
+          <text class="pipeline-label" x="150" y="20">Split</text>
+          <text class="pipeline-label" x="286" y="20">Align</text>
+          <text class="pipeline-label" x="432" y="20">Displace</text>
+          <text class="pipeline-label" x="566" y="20">Recolor</text>
+          <text class="pipeline-label" x="734" y="20">Combine</text>
+          <g class="pipeline-connectors">
+            <path d="M68 144 H88 V64 H114"/>
+            <path d="M88 144 H114"/>
+            <path d="M88 144 V224 H114"/>
+            <path class="pipeline-reference" d="M180 64 H396"/>
+            <path class="pipeline-reference" d="M286 64 V108"/>
+            <path d="M180 144 H218"/>
+            <path d="M180 224 H218"/>
+            <path class="pipeline-shift-g" d="M380 184 H388 V144 H396"/>
+            <path class="pipeline-shift-r" d="M380 224 H396"/>
+            <path d="M464 64 H530"/>
+            <path d="M464 144 H530"/>
+            <path d="M464 224 H530"/>
+            <path d="M598 64 H630 V124 H684"/>
+            <path d="M598 144 H684"/>
+            <path d="M598 224 H642 V164 H684"/>
+          </g>
+          <image href="assets/proj01/web/overview-raw.jpg" x="18" y="80" width="48" height="128" preserveAspectRatio="xMidYMid meet"/>
+        <image href="assets/proj01/web/pipeline-b.jpg" x="116" y="36" width="64" height="56" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel pipeline-channel--b" x="148" y="106">B · fixed</text>
+        <rect class="pipeline-target" x="398" y="36" width="64" height="56" rx="3"/>
+        <image href="assets/proj01/web/pipeline-b.jpg" x="398" y="36" width="64" height="56" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel pipeline-channel--b" x="430" y="106">B · fixed</text>
+        <image href="assets/proj01/web/pipeline-b.jpg" x="532" y="36" width="64" height="56" filter="url(#pipeline-tint-b)" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel pipeline-channel--b" x="564" y="106">B</text>
+        <image href="assets/proj01/web/pipeline-g.jpg" x="116" y="116" width="64" height="56" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel" x="148" y="186">G</text>
+        <rect class="pipeline-target" x="398" y="116" width="64" height="56" rx="3"/>
+        <image href="assets/proj01/web/pipeline-aligned-g.jpg" x="398" y="116" width="64" height="56" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel" x="430" y="186">G</text>
+        <image href="assets/proj01/web/pipeline-aligned-g.jpg" x="532" y="116" width="64" height="56" filter="url(#pipeline-tint-g)" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel pipeline-channel--g" x="564" y="186">G</text>
+        <image href="assets/proj01/web/pipeline-r.jpg" x="116" y="196" width="64" height="56" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel" x="148" y="266">R</text>
+        <rect class="pipeline-target" x="398" y="196" width="64" height="56" rx="3"/>
+        <image href="assets/proj01/web/pipeline-aligned-r.jpg" x="398" y="196" width="64" height="56" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel" x="430" y="266">R</text>
+        <image href="assets/proj01/web/pipeline-aligned-r.jpg" x="532" y="196" width="64" height="56" filter="url(#pipeline-tint-r)" preserveAspectRatio="xMidYMid meet"/>
+        <text class="pipeline-channel pipeline-channel--r" x="564" y="266">R</text>
+          <text class="pipeline-channel pipeline-channel--b" x="286" y="51">Fixed reference</text>
+          <rect class="pipeline-tool" x="220" y="110" width="160" height="144" rx="10"/>
+          <text class="pipeline-tool-label" x="300" y="136">Alignment method</text>
+          <text class="pipeline-channel" x="300" y="155">G → B and R → B</text>
+          <text class="pipeline-offsets pipeline-offsets--g" x="300" y="188">G: (Δx<tspan baseline-shift="sub" font-size="10">G</tspan>, Δy<tspan baseline-shift="sub" font-size="10">G</tspan>)</text>
+          <text class="pipeline-offsets pipeline-offsets--r" x="300" y="228">R: (Δx<tspan baseline-shift="sub" font-size="10">R</tspan>, Δy<tspan baseline-shift="sub" font-size="10">R</tspan>)</text>
+          <image href="assets/proj01/web/overview-output.jpg" x="686" y="101" width="104" height="90" preserveAspectRatio="xMidYMid meet"/>
+          <text class="pipeline-channel" x="738" y="210">RGB</text>
+        </svg>
+      </div>
+    </figure>
+  </div>
+
+  <div class="section add-top-padding" id="single-scale">
+    <div class="section-head">
+      <h1>Single-scale search</h1>
+      <figure class="axes">
+        <figcaption>Offsets, in pixels</figcaption>
+        <svg viewBox="0 0 112 62" role="img"
+             aria-label="Offset convention: the origin is the top-left corner of the image, positive x runs right, positive y runs down.">
+          <rect x="6.75" y="6.75" width="98.5" height="48.5" rx="4"
+                fill="none" stroke="#d5d8db" stroke-dasharray="3 3"/>
+          <g stroke="var(--accent)" stroke-width="1.5" fill="none">
+            <path d="M7 7 H48"/>
+            <path d="M7 7 V36"/>
+          </g>
+          <g fill="var(--accent)">
+            <polygon points="48,3.5 56,7 48,10.5"/>
+            <polygon points="3.5,36 7,44 10.5,36"/>
+            <circle cx="7" cy="7" r="2.5"/>
+          </g>
+          <text class="axes-label" x="60" y="10.5">+x</text>
+          <text class="axes-label" x="12" y="47">+y</text>
+        </svg>
+      </figure>
+    </div>
+
+    <p>The naive way to align the images is to take the assumption that the images are already somewhat closely aligned and all that is needed is to search a window of displacements to figure out which displacement optimizes some similarity metric. Speficially I fix the B channel and then compute transforms and scores by individually manipuylating the R and G channels relative to the B channel. I used L2 and NCC whose implementations are below. One notable aspect of the implementation is the usage of slicing to crop the image to make sure the similarity metrics are only measuring the actual content of the image and not the borders.</p>
+    <div class="pair scoring-metrics">
+      <figure>
+        <figcaption class="caption">L2</figcaption>
+        <div class="python-code" tabindex="0" role="region" aria-label="Python L2 scoring function">
+<pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">l2</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">frac</span><span class="py-o">=</span><span class="py-mf">0.15</span><span class="py-p">):</span>
+    <span class="py-c1"># manual crop</span>
+    <span class="py-n">h</span><span class="py-p">,</span> <span class="py-n">w</span> <span class="py-o">=</span> <span class="py-n">a</span><span class="py-o">.</span><span class="py-n">shape</span>
+    <span class="py-n">ch</span><span class="py-p">,</span> <span class="py-n">cw</span> <span class="py-o">=</span> <span class="py-nb">int</span><span class="py-p">(</span><span class="py-n">h</span> <span class="py-o">*</span> <span class="py-n">frac</span><span class="py-p">),</span> <span class="py-nb">int</span><span class="py-p">(</span><span class="py-n">w</span> <span class="py-o">*</span> <span class="py-n">frac</span><span class="py-p">)</span>
+    <span class="py-n">a</span> <span class="py-o">=</span> <span class="py-n">a</span><span class="py-p">[</span><span class="py-n">ch</span><span class="py-p">:</span><span class="py-n">h</span><span class="py-o">-</span><span class="py-n">ch</span><span class="py-p">,</span> <span class="py-n">cw</span><span class="py-p">:</span><span class="py-n">w</span><span class="py-o">-</span><span class="py-n">cw</span><span class="py-p">]</span>
+    <span class="py-n">b</span> <span class="py-o">=</span> <span class="py-n">b</span><span class="py-p">[</span><span class="py-n">ch</span><span class="py-p">:</span><span class="py-n">h</span><span class="py-o">-</span><span class="py-n">ch</span><span class="py-p">,</span> <span class="py-n">cw</span><span class="py-p">:</span><span class="py-n">w</span><span class="py-o">-</span><span class="py-n">cw</span><span class="py-p">]</span>
+    <span class="py-k">return</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">sqrt</span><span class="py-p">(</span><span class="py-n">np</span><span class="py-o">.</span><span class="py-n">sum</span><span class="py-p">(</span> <span class="py-p">(</span><span class="py-n">a</span><span class="py-o">-</span><span class="py-n">b</span><span class="py-p">)</span> <span class="py-o">**</span> <span class="py-mi">2</span><span class="py-p">))</span></code></pre>
+        </div>
+      </figure>
+      <figure>
+        <figcaption class="caption">NCC</figcaption>
+        <div class="python-code" tabindex="0" role="region" aria-label="Python NCC scoring function">
+<pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">ncc</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">frac</span><span class="py-o">=</span><span class="py-mf">0.15</span><span class="py-p">):</span>
+    <span class="py-n">h</span><span class="py-p">,</span> <span class="py-n">w</span> <span class="py-o">=</span> <span class="py-n">a</span><span class="py-o">.</span><span class="py-n">shape</span>
+    <span class="py-n">ch</span><span class="py-p">,</span> <span class="py-n">cw</span> <span class="py-o">=</span> <span class="py-nb">int</span><span class="py-p">(</span><span class="py-n">h</span> <span class="py-o">*</span> <span class="py-n">frac</span><span class="py-p">),</span> <span class="py-nb">int</span><span class="py-p">(</span><span class="py-n">w</span> <span class="py-o">*</span> <span class="py-n">frac</span><span class="py-p">)</span>
+    <span class="py-n">a</span> <span class="py-o">=</span> <span class="py-n">a</span><span class="py-p">[</span><span class="py-n">ch</span><span class="py-p">:</span><span class="py-n">h</span><span class="py-o">-</span><span class="py-n">ch</span><span class="py-p">,</span> <span class="py-n">cw</span><span class="py-p">:</span><span class="py-n">w</span><span class="py-o">-</span><span class="py-n">cw</span><span class="py-p">]</span>
+    <span class="py-n">b</span> <span class="py-o">=</span> <span class="py-n">b</span><span class="py-p">[</span><span class="py-n">ch</span><span class="py-p">:</span><span class="py-n">h</span><span class="py-o">-</span><span class="py-n">ch</span><span class="py-p">,</span> <span class="py-n">cw</span><span class="py-p">:</span><span class="py-n">w</span><span class="py-o">-</span><span class="py-n">cw</span><span class="py-p">]</span>
+    <span class="py-n">a</span> <span class="py-o">=</span> <span class="py-n">a</span> <span class="py-o">-</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">mean</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">)</span>
+    <span class="py-n">b</span> <span class="py-o">=</span> <span class="py-n">b</span> <span class="py-o">-</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">mean</span><span class="py-p">(</span><span class="py-n">b</span><span class="py-p">)</span>
+
+    <span class="py-k">return</span> <span class="py-o">-</span><span class="py-n">np</span><span class="py-o">.</span><span class="py-n">sum</span><span class="py-p">(</span><span class="py-n">a</span> <span class="py-o">*</span> <span class="py-n">b</span><span class="py-p">)</span> <span class="py-o">/</span> <span class="py-p">(</span><span class="py-n">np</span><span class="py-o">.</span><span class="py-n">linalg</span><span class="py-o">.</span><span class="py-n">norm</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">)</span> <span class="py-o">*</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">linalg</span><span class="py-o">.</span><span class="py-n">norm</span><span class="py-p">(</span><span class="py-n">b</span><span class="py-p">))</span></code></pre>
+        </div>
+      </figure>
+    </div>
+
+    <p>The actual alignment code takes in the two images, the scoring metric, how many displacements to test across each axis, the number of pixels each displacement takes, and a current_transform argument which can be thought of as a prior on where to start searching which is useful in the pyramid implementation.</p>
+    <div class="python-code" tabindex="0" role="region" aria-label="Python single-scale alignment function">
+<pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">align</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">method</span><span class="py-p">,</span> <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-mi">15</span><span class="py-p">,</span> <span class="py-n">step_size</span><span class="py-o">=</span><span class="py-mi">1</span><span class="py-p">,</span> <span class="py-n">curr_transform</span><span class="py-o">=</span><span class="py-p">(</span><span class="py-mi">0</span><span class="py-p">,</span> <span class="py-mi">0</span><span class="py-p">)):</span>
+    <span class="py-n">best_transform</span> <span class="py-o">=</span> <span class="py-n">curr_transform</span> <span class="py-c1"># used when doing pyramid fine tuning on the way back up</span>
+    <span class="py-n">curr_score</span> <span class="py-o">=</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">inf</span>
+    <span class="py-c1"># step through all possible displacements given by num_steps and step_size</span>
+    <span class="py-k">for</span> <span class="py-n">y_step</span> <span class="py-ow">in</span> <span class="py-nb">range</span><span class="py-p">(</span><span class="py-o">-</span><span class="py-n">num_steps</span><span class="py-p">,</span> <span class="py-n">num_steps</span> <span class="py-o">+</span> <span class="py-mi">1</span><span class="py-p">):</span>
+        <span class="py-k">for</span> <span class="py-n">x_step</span> <span class="py-ow">in</span> <span class="py-nb">range</span><span class="py-p">(</span><span class="py-o">-</span><span class="py-n">num_steps</span><span class="py-p">,</span> <span class="py-n">num_steps</span> <span class="py-o">+</span> <span class="py-mi">1</span><span class="py-p">):</span>
+            <span class="py-n">transform</span> <span class="py-o">=</span> <span class="py-p">(</span>
+                <span class="py-n">curr_transform</span><span class="py-p">[</span><span class="py-mi">0</span><span class="py-p">]</span> <span class="py-o">+</span> <span class="py-n">y_step</span> <span class="py-o">*</span> <span class="py-n">step_size</span><span class="py-p">,</span>
+                <span class="py-n">curr_transform</span><span class="py-p">[</span><span class="py-mi">1</span><span class="py-p">]</span> <span class="py-o">+</span> <span class="py-n">x_step</span> <span class="py-o">*</span> <span class="py-n">step_size</span><span class="py-p">,</span>
+            <span class="py-p">)</span>
+            <span class="py-n">transformed</span> <span class="py-o">=</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">roll</span><span class="py-p">(</span><span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">transform</span><span class="py-p">,</span> <span class="py-n">axis</span><span class="py-o">=</span><span class="py-p">(</span><span class="py-mi">0</span><span class="py-p">,</span> <span class="py-mi">1</span><span class="py-p">))</span>
+
+            <span class="py-n">score</span> <span class="py-o">=</span> <span class="py-n">method</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">transformed</span><span class="py-p">)</span>
+            <span class="py-k">if</span> <span class="py-n">score</span> <span class="py-o">&lt;</span> <span class="py-n">curr_score</span><span class="py-p">:</span>
+                <span class="py-n">curr_score</span> <span class="py-o">=</span> <span class="py-n">score</span>
+                <span class="py-n">best_transform</span> <span class="py-o">=</span> <span class="py-n">transform</span>
+
+    <span class="py-c1"># returns the transformed image and transform itself</span>
+    <span class="py-k">return</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">roll</span><span class="py-p">(</span><span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">best_transform</span><span class="py-p">,</span> <span class="py-n">axis</span><span class="py-o">=</span><span class="py-p">(</span><span class="py-mi">0</span><span class="py-p">,</span> <span class="py-mi">1</span><span class="py-p">)),</span> <span class="py-n">best_transform</span></code></pre>
+    </div>
+
+    
+
+    <ul class="gallery">
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/sm-cathedral.jpg" data-fullres="assets/proj01/out/exhaustive_ncc/cathedral__exhaustive_ncc_raw__gx2y5_s-0.957__rx3y12_s-0.908.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">cathedral</p>
+            <p class="exif">
+              <span>G <b>(2, 5)</b></span>
+              <span>R <b>(3, 12)</b></span>
+              <span>t <b>0.14 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/sm-monastery.jpg" data-fullres="assets/proj01/out/exhaustive_ncc/monastery__exhaustive_ncc_raw__gx2y-3_s-0.951__rx2y3_s-0.858.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">monastery</p>
+            <p class="exif">
+              <span>G <b>(2, -3)</b></span>
+              <span>R <b>(2, 3)</b></span>
+              <span>t <b>0.14 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/sm-tobolsk.jpg" data-fullres="assets/proj01/out/exhaustive_ncc/tobolsk__exhaustive_ncc_raw__gx3y3_s-0.931__rx3y6_s-0.860.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">tobolsk</p>
+            <p class="exif">
+              <span>G <b>(3, 3)</b></span>
+              <span>R <b>(3, 6)</b></span>
+              <span>t <b>0.14 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+    </ul>
+
+    <p class="exif exif--params">
+      <span>Steps <b>15</b></span>
+      <span>Step size <b>1 px</b></span>
+      <span>Border crop <b>15%</b></span>
+    </p>
+
+    <h2>L2 against NCC</h2>
+    <p>For the smaller images NCC and L2 yielded the same displacements but I chose to use NCC for the larger scale images since it is more robust to lighting variations in the image. </p>
+    <div class="scroll-x">
+      <table class="data">
+        <thead>
+          <tr>
+            <th scope="col">Plate</th>
+            <th scope="col">Metric</th>
+            <th scope="col">G (x, y)</th>
+            <th scope="col">R (x, y)</th>
+            <th scope="col">Score G / R</th>
+            <th scope="col">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>cathedral</td>
+          <td>L2</td>
+          <td>(2, 5)</td>
+          <td>(3, 12)</td>
+          <td>37.002 / 53.390</td>
+          <td>0.07 s</td>
+        </tr>
+        <tr>
+          <td>cathedral</td>
+          <td>NCC</td>
+          <td>(2, 5)</td>
+          <td>(3, 12)</td>
+          <td>-0.957 / -0.908</td>
+          <td>0.14 s</td>
+        </tr>
+        <tr>
+          <td>monastery</td>
+          <td>L2</td>
+          <td>(2, -3)</td>
+          <td>(2, 3)</td>
+          <td>25.997 / 49.540</td>
+          <td>0.08 s</td>
+        </tr>
+        <tr>
+          <td>monastery</td>
+          <td>NCC</td>
+          <td>(2, -3)</td>
+          <td>(2, 3)</td>
+          <td>-0.951 / -0.858</td>
+          <td>0.14 s</td>
+        </tr>
+        <tr>
+          <td>tobolsk</td>
+          <td>L2</td>
+          <td>(3, 3)</td>
+          <td>(3, 6)</td>
+          <td>26.752 / 51.880</td>
+          <td>0.08 s</td>
+        </tr>
+        <tr>
+          <td>tobolsk</td>
+          <td>NCC</td>
+          <td>(3, 3)</td>
+          <td>(3, 6)</td>
+          <td>-0.931 / -0.860</td>
+          <td>0.14 s</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section add-top-padding" id="pyramid">
+    <h1>Image pyramid</h1>
+    <p>Running the single scale search on the larger TIF images is extremely inefficeint and takes a substantial amount of time to produce an alignment. Instead I adopted a pyramid based approach where I approximate the optimal displacement at a lower resolution and then refine the estimate at higher resolutions which should take a substantially less amount of time.</p>
+
+    <p>I downsample the images and run pyramid search recursively on the downsampled image. At the very lowest resolution I do a very dense alignment and return that transform which gets multiplied by two so it matches with the next highest resolution. Then using that transform I perform a small refinement pass in a 5x5 pixel window to see if there is a more optimal solution. I then repeat this all the way back to the top of the pyramid to produce a optimal displacement very quickly.</p>
+
+    <figure class="pyr-fig">
+      <div class="pyr-scroll" tabindex="0" role="region" aria-label="Image pyramid">
+        <svg class="pyr3d" viewBox="0 0 800 434" role="img"
+             aria-label="Image pyramid: l0 to l4, left to right. Downsample ½ each level; align, ×2, fine adjust on the return pass.">
+          <text class="pyr-lane-label" x="400" y="22">downsample ½ each level</text>
+          <path class="pyr-arrow pyr-arrow--down" d="M36 40 H770"/>
+          <path class="pyr-arrow-head" d="m764 35 6 5-6 5"/>
+          <polyline class="pyr-edge" points="35.75,74.73 303.87,132.38 489.92,161.19 629.96,175.59 745.97,182.81"/>
+          <polyline class="pyr-edge" points="35.75,260.85 303.87,225.41 489.92,207.70 629.96,198.85 745.97,194.41"/>
+          <polyline class="pyr-edge" points="228.25,305.27 400.13,247.62 538.08,218.81 654.04,204.41 758.03,197.19"/>
+          <g transform="matrix(0.052 0.012 0 0.058 35.748 74.727)">
+            <image href="assets/proj01/web/pyr-l0.jpg" data-fullres="assets/proj01/out/misc/emir_pyramid_l0_3209x3702.jpg" width="3702" height="3209" preserveAspectRatio="none"/>
+            <rect class="pyr-plane" width="3702" height="3209" vector-effect="non-scaling-stroke"/>
+          </g>
+          <g transform="matrix(0.052 0.012 0 0.058 303.874 132.378)">
+            <image href="assets/proj01/web/pyr-l1.jpg" data-fullres="assets/proj01/out/misc/emir_pyramid_l1_1604x1851.jpg" width="1851" height="1604" preserveAspectRatio="none"/>
+            <rect class="pyr-plane" width="1851" height="1604" vector-effect="non-scaling-stroke"/>
+          </g>
+          <g transform="matrix(0.052 0.012 0 0.058 489.924 161.186)">
+            <image href="assets/proj01/web/pyr-l2.jpg" data-fullres="assets/proj01/out/misc/emir_pyramid_l2_802x926.jpg" width="926" height="802" preserveAspectRatio="none"/>
+            <rect class="pyr-plane" width="926" height="802" vector-effect="non-scaling-stroke"/>
+          </g>
+          <g transform="matrix(0.052 0.012 0 0.058 629.962 175.593)">
+            <image href="assets/proj01/web/pyr-l3.jpg" data-fullres="assets/proj01/out/misc/emir_pyramid_l3_401x463.jpg" width="463" height="401" preserveAspectRatio="none"/>
+            <rect class="pyr-plane" width="463" height="401" vector-effect="non-scaling-stroke"/>
+          </g>
+          <g transform="matrix(0.052 0.012 0 0.058 745.968 182.808)">
+            <image href="assets/proj01/web/pyr-l4.jpg" data-fullres="assets/proj01/out/misc/emir_pyramid_l4_200x232.jpg" width="232" height="200" preserveAspectRatio="none"/>
+            <rect class="pyr-plane" width="232" height="200" vector-effect="non-scaling-stroke"/>
+          </g>
+          <text class="pyr-label" x="132" y="330">
+            <tspan class="pyr-l" x="132">l0</tspan>
+            <tspan class="pyr-dim" x="132" dy="22">3702 × 3209</tspan>
+          </text>
+          <text class="pyr-scale" x="132" y="375">1/1</text>
+          <text class="pyr-label" x="352" y="330">
+            <tspan class="pyr-l" x="352">l1</tspan>
+            <tspan class="pyr-dim" x="352" dy="22">1851 × 1604</tspan>
+          </text>
+          <text class="pyr-scale" x="352" y="375">1/2</text>
+          <text class="pyr-label" x="514" y="330">
+            <tspan class="pyr-l" x="514">l2</tspan>
+            <tspan class="pyr-dim" x="514" dy="22">926 × 802</tspan>
+          </text>
+          <text class="pyr-scale" x="514" y="375">1/4</text>
+          <text class="pyr-label" x="642" y="330">
+            <tspan class="pyr-l" x="642">l3</tspan>
+            <tspan class="pyr-dim" x="642" dy="22">463 × 401</tspan>
+          </text>
+          <text class="pyr-scale" x="642" y="375">1/8</text>
+          <text class="pyr-label" x="752" y="330">
+            <tspan class="pyr-l" x="752">l4</tspan>
+            <tspan class="pyr-dim" x="752" dy="22">232 × 200</tspan>
+          </text>
+          <text class="pyr-scale" x="752" y="375">1/16</text>
+          <path class="pyr-arrow pyr-arrow--up" d="M770 399 H36"/>
+          <path class="pyr-arrow-head pyr-arrow-head--up" d="m42 394-6 5 6 5"/>
+          <text class="pyr-lane-label pyr-lane-label--up" x="400" y="425">align → ×2 → fine adjust</text>
+        </svg>
+      </div>
+      <p class="caption">The levels can be clicked to view how much detail is lost at each downsample.</p>
+    </figure>
+
+    <div class="python-code" tabindex="0" role="region" aria-label="Python pyramid search function">
+<pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">pyramid_search</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">method</span><span class="py-p">,</span> <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-mi">15</span><span class="py-p">,</span> <span class="py-n">step_size</span><span class="py-o">=</span><span class="py-mi">1</span><span class="py-p">,</span> <span class="py-n">min_size</span><span class="py-o">=</span><span class="py-mi">256</span><span class="py-p">):</span>
+
+    <span class="py-c1"># at smallest scale perform the exhaustive alignment to produce a rough displacement</span>
+    <span class="py-k">if</span> <span class="py-nb">min</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-o">.</span><span class="py-n">shape</span><span class="py-p">)</span> <span class="py-o">&lt;=</span> <span class="py-n">min_size</span><span class="py-p">:</span>
+        <span class="py-k">return</span> <span class="py-n">align</span><span class="py-p">(</span>
+            <span class="py-n">a</span><span class="py-p">,</span>
+            <span class="py-n">b</span><span class="py-p">,</span>
+            <span class="py-n">method</span><span class="py-o">=</span><span class="py-n">method</span><span class="py-p">,</span>
+            <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-n">num_steps</span><span class="py-p">,</span>
+            <span class="py-n">step_size</span><span class="py-o">=</span><span class="py-n">step_size</span><span class="py-p">,</span>
+        <span class="py-p">)</span>
+
+    <span class="py-c1"># downsample by a factor of two</span>
+    <span class="py-n">a_downsamp</span> <span class="py-o">=</span> <span class="py-n">sk</span><span class="py-o">.</span><span class="py-n">transform</span><span class="py-o">.</span><span class="py-n">rescale</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-mf">0.5</span><span class="py-p">,</span> <span class="py-n">anti_aliasing</span><span class="py-o">=</span><span class="py-kc">False</span><span class="py-p">)</span>
+    <span class="py-n">b_downsamp</span> <span class="py-o">=</span> <span class="py-n">sk</span><span class="py-o">.</span><span class="py-n">transform</span><span class="py-o">.</span><span class="py-n">rescale</span><span class="py-p">(</span><span class="py-n">b</span><span class="py-p">,</span> <span class="py-mf">0.5</span><span class="py-p">,</span> <span class="py-n">anti_aliasing</span><span class="py-o">=</span><span class="py-kc">False</span><span class="py-p">)</span>
+
+    <span class="py-n">_</span><span class="py-p">,</span> <span class="py-n">coarse_transform</span> <span class="py-o">=</span> <span class="py-n">pyramid_search</span><span class="py-p">(</span>
+        <span class="py-n">a_downsamp</span><span class="py-p">,</span>
+        <span class="py-n">b_downsamp</span><span class="py-p">,</span>
+        <span class="py-n">method</span><span class="py-o">=</span><span class="py-n">method</span><span class="py-p">,</span>
+        <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-n">num_steps</span><span class="py-p">,</span>
+        <span class="py-n">step_size</span><span class="py-o">=</span><span class="py-n">step_size</span><span class="py-p">,</span>
+        <span class="py-n">min_size</span><span class="py-o">=</span><span class="py-n">min_size</span><span class="py-p">,</span>
+    <span class="py-p">)</span>
+
+    <span class="py-c1"># need to multiply back the estimated transform by 2 to preserve scale</span>
+    <span class="py-n">transform</span> <span class="py-o">=</span> <span class="py-nb">tuple</span><span class="py-p">(</span><span class="py-mi">2</span> <span class="py-o">*</span> <span class="py-n">coordinate</span> <span class="py-k">for</span> <span class="py-n">coordinate</span> <span class="py-ow">in</span> <span class="py-n">coarse_transform</span><span class="py-p">)</span>
+
+    <span class="py-c1"># refine course displacement</span>
+    <span class="py-k">return</span> <span class="py-n">align</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">method</span><span class="py-o">=</span><span class="py-n">method</span><span class="py-p">,</span> <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-mi">2</span><span class="py-p">,</span> <span class="py-n">curr_transform</span><span class="py-o">=</span><span class="py-n">transform</span><span class="py-p">)</span></code></pre>
+    </div>
+
+<!-- 
+    <h2>Cost</h2>
+    <div class="scroll-x">
+      <table class="data">
+        <thead>
+          <tr>
+            <th scope="col">Method</th>
+            <th scope="col">cathedral</th>
+            <th scope="col">monastery</th>
+            <th scope="col">tobolsk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Exhaustive, L2</td>
+            <td>0.07 s</td>
+            <td>0.08 s</td>
+            <td>0.08 s</td>
+          </tr>
+          <tr>
+            <td>Exhaustive, NCC</td>
+            <td>0.14 s</td>
+            <td>0.14 s</td>
+            <td>0.14 s</td>
+          </tr>
+          <tr>
+            <td>Pyramid, NCC</td>
+            <td>0.06 s</td>
+            <td>0.06 s</td>
+            <td>0.06 s</td>
+          </tr>
+        </tbody>
+      </table>
+    </div> -->
+  </div>
+
+  <div class="section add-top-padding" id="results">
+    <div class="section-head">
+      <h1>Results</h1>
+      <figure class="axes">
+        <figcaption>Offsets, in pixels</figcaption>
+        <svg viewBox="0 0 112 62" role="img"
+             aria-label="Offset convention: the origin is the top-left corner of the image, positive x runs right, positive y runs down.">
+          <rect x="6.75" y="6.75" width="98.5" height="48.5" rx="4"
+                fill="none" stroke="#d5d8db" stroke-dasharray="3 3"/>
+          <g stroke="var(--accent)" stroke-width="1.5" fill="none">
+            <path d="M7 7 H48"/>
+            <path d="M7 7 V36"/>
+          </g>
+          <g fill="var(--accent)">
+            <polygon points="48,3.5 56,7 48,10.5"/>
+            <polygon points="3.5,36 7,44 10.5,36"/>
+            <circle cx="7" cy="7" r="2.5"/>
+          </g>
+          <text class="axes-label" x="60" y="10.5">+x</text>
+          <text class="axes-label" x="12" y="47">+y</text>
+        </svg>
+      </figure>
+    </div>
+
+    <p>These are the results of running the pyramid pipeline using NCC as the score metric on all 17 full sized TIF images. All of the images aligned well except for the emir which is explored in the bells & whistles section.</p>
+
+    <ul class="gallery">
+      <!-- One tile per plate, from the pyramid NCC run on raw pixels. Offsets
+           are the (x, y) displacements applied to the green and red channels
+           to bring them onto the blue one; t is that plate's wall-clock time.
+           Every value is transcribed from assets/proj01/out/results.csv. -->
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/cathedral-raw.jpg" data-fullres="assets/proj01/out/pyramid/cathedral__pyramid_ncc_raw__gx2y5_s-0.957__rx3y12_s-0.908.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">cathedral</p>
+            <p class="exif">
+              <span>G <b>(2, 5)</b></span>
+              <span>R <b>(3, 12)</b></span>
+              <span>t <b>0.06 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/church-raw.jpg" data-fullres="assets/proj01/out/pyramid/church__pyramid_ncc_raw__gx4y25_s-0.909__rx-4y58_s-0.776.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">church</p>
+            <p class="exif">
+              <span>G <b>(4, 25)</b></span>
+              <span>R <b>(-4, 58)</b></span>
+              <span>t <b>1.00 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/emir-raw.jpg" data-fullres="assets/proj01/out/pyramid/emir__pyramid_ncc_raw__gx24y49_s-0.677__rx44y63_s-0.235.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">emir <span class="alignment-warning">(improper alignment)</span></p>
+            <p class="exif">
+              <span>G <b>(24, 49)</b></span>
+              <span>R <b>(44, 63)</b></span>
+              <span>t <b>0.99 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/harvesters-raw.jpg" data-fullres="assets/proj01/out/pyramid/harvesters__pyramid_ncc_raw__gx17y60_s-0.753__rx14y124_s-0.782.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">harvesters</p>
+            <p class="exif">
+              <span>G <b>(17, 60)</b></span>
+              <span>R <b>(14, 124)</b></span>
+              <span>t <b>0.98 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/icon-raw.jpg" data-fullres="assets/proj01/out/pyramid/icon__pyramid_ncc_raw__gx17y41_s-0.804__rx23y89_s-0.629.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">icon</p>
+            <p class="exif">
+              <span>G <b>(17, 41)</b></span>
+              <span>R <b>(23, 89)</b></span>
+              <span>t <b>1.02 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/ilemselga-raw.jpg" data-fullres="assets/proj01/out/pyramid/ilemselga__pyramid_ncc_raw__gx7y40_s-0.830__rx11y130_s-0.698.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">ilemselga</p>
+            <p class="exif">
+              <span>G <b>(7, 40)</b></span>
+              <span>R <b>(11, 130)</b></span>
+              <span>t <b>1.07 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/melons-raw.jpg" data-fullres="assets/proj01/out/pyramid/melons__pyramid_ncc_raw__gx10y81_s-0.935__rx14y178_s-0.901.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">melons</p>
+            <p class="exif">
+              <span>G <b>(10, 81)</b></span>
+              <span>R <b>(14, 178)</b></span>
+              <span>t <b>1.03 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/monastery-raw.jpg" data-fullres="assets/proj01/out/pyramid/monastery__pyramid_ncc_raw__gx2y-3_s-0.951__rx2y3_s-0.858.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">monastery</p>
+            <p class="exif">
+              <span>G <b>(2, -3)</b></span>
+              <span>R <b>(2, 3)</b></span>
+              <span>t <b>0.06 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/religous_painting-raw.jpg" data-fullres="assets/proj01/out/pyramid/religous_painting__pyramid_ncc_raw__gx3y28_s-0.819__rx7y68_s-0.734.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">religous_painting</p>
+            <p class="exif">
+              <span>G <b>(3, 28)</b></span>
+              <span>R <b>(7, 68)</b></span>
+              <span>t <b>1.01 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/self_portrait-raw.jpg" data-fullres="assets/proj01/out/pyramid/self_portrait__pyramid_ncc_raw__gx29y79_s-0.767__rx37y176_s-0.742.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">self_portrait</p>
+            <p class="exif">
+              <span>G <b>(29, 79)</b></span>
+              <span>R <b>(37, 176)</b></span>
+              <span>t <b>1.07 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/siren-raw.jpg" data-fullres="assets/proj01/out/pyramid/siren__pyramid_ncc_raw__gx-6y49_s-0.870__rx-25y96_s-0.913.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">siren</p>
+            <p class="exif">
+              <span>G <b>(-6, 49)</b></span>
+              <span>R <b>(-25, 96)</b></span>
+              <span>t <b>1.20 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/three_generations-raw.jpg" data-fullres="assets/proj01/out/pyramid/three_generations__pyramid_ncc_raw__gx14y52_s-0.924__rx11y111_s-0.892.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">three_generations</p>
+            <p class="exif">
+              <span>G <b>(14, 52)</b></span>
+              <span>R <b>(11, 111)</b></span>
+              <span>t <b>1.00 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/tobolsk-raw.jpg" data-fullres="assets/proj01/out/pyramid/tobolsk__pyramid_ncc_raw__gx3y3_s-0.931__rx3y6_s-0.860.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">tobolsk</p>
+            <p class="exif">
+              <span>G <b>(3, 3)</b></span>
+              <span>R <b>(3, 6)</b></span>
+              <span>t <b>0.06 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/wharf-raw.jpg" data-fullres="assets/proj01/out/pyramid/wharf__pyramid_ncc_raw__gx-7y15_s-0.888__rx-16y82_s-0.766.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name">wharf</p>
+            <p class="exif">
+              <span>G <b>(-7, 15)</b></span>
+              <span>R <b>(-16, 82)</b></span>
+              <span>t <b>1.06 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+    </ul>
+
+    <h2>Plates I chose</h2>
+    <ul class="gallery">
+      <!-- Each name links to that plate's Library of Congress record. -->
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/train-raw.jpg" data-fullres="assets/proj01/out/pyramid/train__pyramid_ncc_raw__gx6y43_s-0.928__rx32y87_s-0.898.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name"><a href="https://www.loc.gov/item/2018679302/">train</a></p>
+            <p class="exif">
+              <span>G <b>(6, 43)</b></span>
+              <span>R <b>(32, 87)</b></span>
+              <span>t <b>1.01 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/brick_building-raw.jpg" data-fullres="assets/proj01/out/pyramid/brick_building__pyramid_ncc_raw__gx-12y44_s-0.843__rx-27y99_s-0.746.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name"><a href="https://www.loc.gov/item/2018681278/">brick_building</a></p>
+            <p class="exif">
+              <span>G <b>(-12, 44)</b></span>
+              <span>R <b>(-27, 99)</b></span>
+              <span>t <b>1.07 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+      <li>
+        <figure class="tile">
+          <div class="frame"><img src="assets/proj01/web/smolensk-raw.jpg" data-fullres="assets/proj01/out/pyramid/smolensk__pyramid_ncc_raw__gx-15y31_s-0.944__rx-29y56_s-0.936.jpg" alt=""></div>
+          <figcaption>
+            <p class="tile-name"><a href="https://www.loc.gov/item/2018680014/">smolensk</a></p>
+            <p class="exif">
+              <span>G <b>(-15, 31)</b></span>
+              <span>R <b>(-29, 56)</b></span>
+              <span>t <b>1.07 s</b></span>
+            </p>
+          </figcaption>
+        </figure>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section add-top-padding" id="extras">
+    <h1>Bells &amp; whistles</h1>
+
+    <h2>Sobel edge detection</h2>
+    <p>The emir plates are quite interesting in that NCC and L2 fail to properly align the image. Out of all the source plates the emir is the only one with a deeply saturated color present in a large portion of the image which means that across channels that region will be very anti-correlated. Since the robe is a significant portion of the image it throws of the pixel based alignment methods. However edges should be similar across the channels so we can maybe use that to align the images. We can do this using convolution and sobel filters.</p>
+
+    <p>To start I first made a custom convolve function that takes in a single channel image and convolves it with a 3x3 filter and then returns the result.</p>
+
+    <div class="python-code" tabindex="0" role="region" aria-label="Python convolution function">
+<pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">convolve</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">,</span> <span class="py-n">kernel</span><span class="py-p">):</span>
+    <span class="py-n">h</span><span class="py-p">,</span> <span class="py-n">w</span> <span class="py-o">=</span> <span class="py-n">img</span><span class="py-o">.</span><span class="py-n">shape</span>
+    <span class="py-n">kernel</span> <span class="py-o">=</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">flip</span><span class="py-p">(</span><span class="py-n">kernel</span><span class="py-p">)</span>
+    <span class="py-n">padded</span> <span class="py-o">=</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">pad</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">,</span> <span class="py-n">pad_width</span><span class="py-o">=</span><span class="py-mi">1</span><span class="py-p">)</span>
+
+    <span class="py-k">return</span> <span class="py-nb">sum</span><span class="py-p">(</span>
+        <span class="py-n">kernel</span><span class="py-p">[</span><span class="py-n">i</span><span class="py-p">,</span> <span class="py-n">j</span><span class="py-p">]</span> <span class="py-o">*</span> <span class="py-n">padded</span><span class="py-p">[</span><span class="py-n">i</span><span class="py-p">:</span><span class="py-n">i</span><span class="py-o">+</span><span class="py-n">h</span><span class="py-p">,</span> <span class="py-n">j</span><span class="py-p">:</span><span class="py-n">j</span><span class="py-o">+</span><span class="py-n">w</span><span class="py-p">]</span>
+        <span class="py-k">for</span> <span class="py-n">i</span> <span class="py-ow">in</span> <span class="py-nb">range</span><span class="py-p">(</span><span class="py-mi">3</span><span class="py-p">)</span>
+        <span class="py-k">for</span> <span class="py-n">j</span> <span class="py-ow">in</span> <span class="py-nb">range</span><span class="py-p">(</span><span class="py-mi">3</span><span class="py-p">)</span>
+    <span class="py-p">)</span></code></pre>
+    </div>
+
+    <p>I then defined the two sobel filters for extracting the vertical and horizontal gradients and convolved the image with the kernel. I then calculated the magnitude of the gradient at each pixel and that output represents the edges in the image.</p>
+
+    
+    <div class="sobel-method">
+      <div class="kernel-matrices">
+        <figure>
+          <figcaption class="caption">Kernel X</figcaption>
+          <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <semantics>
+              <mrow>
+                <mo stretchy="true">[</mo>
+                <mtable columnalign="center" columnspacing="0.8em" rowspacing="0.35em">
+                <mtr><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr>
+                <mtr><mtd><mo>−</mo><mn>2</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>2</mn></mtd></mtr>
+                <mtr><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr>
+                </mtable>
+                <mo stretchy="true">]</mo>
+              </mrow>
+              <annotation encoding="application/x-tex">\begin{bmatrix}-1 &amp; 0 &amp; 1 \\ -2 &amp; 0 &amp; 2 \\ -1 &amp; 0 &amp; 1\end{bmatrix}</annotation>
+            </semantics>
+          </math>
+        </figure>
+        <figure>
+          <figcaption class="caption">Kernel Y</figcaption>
+          <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <semantics>
+              <mrow>
+                <mo stretchy="true">[</mo>
+                <mtable columnalign="center" columnspacing="0.8em" rowspacing="0.35em">
+                <mtr><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mo>−</mo><mn>2</mn></mtd><mtd><mo>−</mo><mn>1</mn></mtd></mtr>
+                <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+                <mtr><mtd><mn>1</mn></mtd><mtd><mn>2</mn></mtd><mtd><mn>1</mn></mtd></mtr>
+                </mtable>
+                <mo stretchy="true">]</mo>
+              </mrow>
+              <annotation encoding="application/x-tex">\begin{bmatrix}-1 &amp; -2 &amp; -1 \\ 0 &amp; 0 &amp; 0 \\ 1 &amp; 2 &amp; 1\end{bmatrix}</annotation>
+            </semantics>
+          </math>
+        </figure>
+      </div>
+      <div class="python-code" tabindex="0" role="region" aria-label="Python Sobel function">
+<pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">sobel</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">):</span>
+    <span class="py-c1"># calculate gradients</span>
+    <span class="py-n">gradient_x</span> <span class="py-o">=</span> <span class="py-n">convolve</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">,</span> <span class="py-n">KERNEL_X</span><span class="py-p">)</span>
+    <span class="py-n">gradient_y</span> <span class="py-o">=</span> <span class="py-n">convolve</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">,</span> <span class="py-n">KERNEL_Y</span><span class="py-p">)</span>
+
+    <span class="py-c1"># take magnitudes of gradients</span>
+    <span class="py-k">return</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">sqrt</span><span class="py-p">(</span><span class="py-n">np</span><span class="py-o">.</span><span class="py-n">square</span><span class="py-p">(</span><span class="py-n">gradient_x</span><span class="py-p">)</span> <span class="py-o">+</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">square</span><span class="py-p">(</span><span class="py-n">gradient_y</span><span class="py-p">))</span></code></pre>
+      </div>
+    </div>
+
+    <h3>Gradient magnitude, per channel</h3>
+    <figure>
+      <div class="trio">
+        <figure>
+          <div class="frame"><img src="assets/proj01/web/emir-sobel-r.jpg" data-fullres="assets/proj01/out/misc/emir_sobel_r.jpg" alt=""></div>
+          <figcaption class="caption">R</figcaption>
+        </figure>
+        <figure>
+          <div class="frame"><img src="assets/proj01/web/emir-sobel-g.jpg" data-fullres="assets/proj01/out/misc/emir_sobel_g.jpg" alt=""></div>
+          <figcaption class="caption">G</figcaption>
+        </figure>
+        <figure>
+          <div class="frame"><img src="assets/proj01/web/emir-sobel-b.jpg" data-fullres="assets/proj01/out/misc/emir_sobel_b.jpg" alt=""></div>
+          <figcaption class="caption">B</figcaption>
+        </figure>
+      </div>
+      <p class="caption">Magnitude of the gradients for the Emir plates across the red, blue, and green channels.</p>
+    </figure>
+
+    <p>I can now perform pyramid alignment on the images above to produce an offset that is used to shift the original plates. As you can see below the Sobel alignment is significantly better than the raw alignment.</p>
+    <figure class="viewset">
+      <div class="viewset-controls" role="group" aria-label="Comparison view">
+        <button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+        <button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+      </div>
+
+      <div class="viewset-panel" data-panel="split">
+        <div class="compare" style="--pos:50%; aspect-ratio: 15 / 13">
+          <div class="layer"><img src="assets/proj01/web/emir-raw-lg.jpg" data-fullres="assets/proj01/out/pyramid/emir__pyramid_ncc_raw__gx24y49_s-0.677__rx44y63_s-0.235.jpg" alt=""></div>
+          <div class="layer layer-top"><img src="assets/proj01/web/emir-sobel-lg.jpg" data-fullres="assets/proj01/out/pyramid_edge/emir__pyramid_ncc_gradient__gx24y49_s-0.487__rx40y107_s-0.515.jpg" alt=""></div>
+          <span class="compare-label compare-label--a">Raw Alignment</span>
+          <span class="compare-label compare-label--b">Sobel Alignment</span>
+          <div class="compare-divider" aria-hidden="true"></div>
+          <input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare emir aligned on raw pixel intensity with emir aligned on Sobel gradient magnitude">
+        </div>
+      </div>
+
+      <div class="viewset-panel" data-panel="pair">
+        <div class="pair">
+          <div>
+            <div class="frame" style="aspect-ratio: 15 / 13">
+              <img src="assets/proj01/web/emir-raw-lg.jpg" data-fullres="assets/proj01/out/pyramid/emir__pyramid_ncc_raw__gx24y49_s-0.677__rx44y63_s-0.235.jpg" alt="">
+            </div>
+            <p class="caption">Raw Alignment.</p>
+          </div>
+          <div>
+            <div class="frame" style="aspect-ratio: 15 / 13">
+              <img src="assets/proj01/web/emir-sobel-lg.jpg" data-fullres="assets/proj01/out/pyramid_edge/emir__pyramid_ncc_gradient__gx24y49_s-0.487__rx40y107_s-0.515.jpg" alt="">
+            </div>
+            <p class="caption">Sobel Alignment.</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="caption">Sobel vs Raw Alignment.</p>
+    </figure>
+    <div class="scroll-x">
+      <table class="data">
+        <thead>
+          <tr>
+            <th scope="col">Matched on</th>
+            <th scope="col">G (x, y)</th>
+            <th scope="col">R (x, y)</th>
+            <th scope="col">Score G / R</th>
+            <th scope="col">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>Raw pixels</td>
+          <td>(24, 49)</td>
+          <td>(44, 63)</td>
+          <td>-0.677 / -0.235</td>
+          <td>0.99 s</td>
+        </tr>
+        <tr>
+          <td>Sobel gradient</td>
+          <td>(24, 49)</td>
+          <td>(40, 107)</td>
+          <td>-0.487 / -0.515</td>
+          <td>3.88 s</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <a href="index.html">← All projects</a>
+    <span>Samarth Mahapatra · CS 180</span>
+  </footer>
+
+</div>
+
+<dialog class="image-viewer" aria-label="Full-resolution image">
+  <div class="image-viewer-bar">
+    <a class="image-viewer-original" target="_blank" rel="noopener">Open original ↗</a>
+    <button class="image-viewer-close" type="button" autofocus aria-label="Close image viewer">Close ×</button>
+  </div>
+  <div class="image-viewer-stage">
+    <img class="image-viewer-image" alt="">
+  </div>
+  <p class="image-viewer-status" role="status" aria-live="polite"></p>
+</dialog>
+
+<script>
+// Keep web-sized previews in the page; load the original only when opened.
+(function () {
+  var viewer = document.querySelector('.image-viewer');
+  var image = viewer.querySelector('.image-viewer-image');
+  var original = viewer.querySelector('.image-viewer-original');
+  var status = viewer.querySelector('.image-viewer-status');
+  var trigger;
+
+  function wire(link, source) {
+    link.setAttribute('href', source.dataset.fullres);
+    link.setAttribute('aria-label', link.textContent || 'Expand image');
+    if (typeof viewer.showModal !== 'function') return;
+    link.setAttribute('aria-haspopup', 'dialog');
+    link.addEventListener('click', function (event) {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      trigger = link;
+      status.textContent = 'Loading full-resolution image…';
+      image.hidden = true;
+      image.alt = source.getAttribute('alt') || '';
+      image.onload = function () { image.hidden = false; status.textContent = ''; };
+      image.onerror = function () { status.textContent = 'Could not load this image. Try opening the original.'; };
+      original.href = source.dataset.fullres;
+      image.src = source.dataset.fullres;
+      viewer.showModal();
+      document.documentElement.classList.add('image-viewer-open');
+    });
+  }
+
+  document.querySelectorAll('img[data-fullres], image[data-fullres]').forEach(function (source) {
+    // The comparison range covers both layers; give each its own expand link.
+    if (source.closest('.compare')) return;
+    var svg = source.namespaceURI === 'http://www.w3.org/2000/svg';
+    var link = svg ? document.createElementNS(source.namespaceURI, 'a') : document.createElement('a');
+    link.classList.add('image-expand');
+    if (svg) {
+      link.setAttribute('tabindex', '0');
+      source.closest('svg').setAttribute('role', 'group');
+    }
+    source.parentNode.insertBefore(link, source);
+    link.appendChild(source);
+    wire(link, source);
+  });
+
+  document.querySelectorAll('.compare').forEach(function (compare) {
+    var controls = document.createElement('div');
+    controls.className = 'compare-expand';
+    var labels = compare.querySelectorAll('.compare-label');
+    compare.querySelectorAll('img[data-fullres]').forEach(function (source, i) {
+      var link = document.createElement('a');
+      link.textContent = 'Expand ' + (labels[i] ? labels[i].textContent : 'image');
+      wire(link, source);
+      controls.appendChild(link);
+    });
+    compare.insertAdjacentElement('afterend', controls);
+  });
+
+  viewer.querySelector('.image-viewer-close').addEventListener('click', function () { viewer.close(); });
+  viewer.addEventListener('click', function (event) {
+    if (event.target === viewer || event.target === viewer.querySelector('.image-viewer-stage')) viewer.close();
+  });
+  viewer.addEventListener('close', function () {
+    document.documentElement.classList.remove('image-viewer-open');
+    image.onload = image.onerror = null;
+    image.removeAttribute('src');
+    if (trigger) trigger.focus({ preventScroll: true });
+  });
+})();
+
+// Figure view toggle: split comparison, or the two images on their own.
+// Panels start visible so the page still shows everything without JS.
+document.querySelectorAll('.viewset').forEach(function (set) {
+  var btns = set.querySelectorAll('.viewset-btn');
+  var panels = set.querySelectorAll('.viewset-panel');
+  var show = function (view) {
+    panels.forEach(function (p) { p.hidden = p.dataset.panel !== view; });
+    btns.forEach(function (b) {
+      var on = b.dataset.view === view;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { show(b.dataset.view); });
+  });
+  show('split');
+});
+
+// Drag-to-compare. The control is a range input, so keyboard and touch work
+// without extra handling; the thumb is transparent and the divider is visible.
+document.querySelectorAll('.compare').forEach(function (el) {
+  var input = el.querySelector('input[type="range"]');
+  if (!input) return;
+  var sync = function () { el.style.setProperty('--pos', input.value + '%'); };
+  input.addEventListener('input', sync);
+  sync();
+});
+
+// Highlight the section index entry for whatever is on screen.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.section-index a[href^="#"]'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.remove('is-active'); });
+      if (byId[e.target.id]) byId[e.target.id].classList.add('is-active');
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var s = document.getElementById(id);
+    if (s) obs.observe(s);
+  });
+})();
+</script>
+
+</body>
+</html>

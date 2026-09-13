@@ -677,3 +677,392 @@ td.placeholder { font-style: italic; }
 @media (max-width: 760px) {
     .filmstrip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* ---- results gallery --------------------------------------------------- */
+
+.overview-example {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    align-items: center;
+    gap: 28px;
+    margin: 28px 0 36px;
+}
+
+.overview-example figure { margin: 0; min-width: 0; }
+.overview-example .image-expand { display: block; }
+.overview-example img { display: block; width: 100%; height: 360px; object-fit: contain; border-radius: 10px; }
+.overview-example .caption { text-align: center; }
+.color-pipeline { margin: 28px 0 0; }
+.pipeline-scroll { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+.pipeline-diagram { display: block; width: 100%; min-width: 760px; height: auto; }
+.pipeline-label, .pipeline-tool-label, .pipeline-channel, .pipeline-offsets {
+    font-family: 'Open Sans', sans-serif;
+    text-anchor: middle;
+    fill: #555;
+    font-size: 13px;
+}
+.pipeline-label { font-size: 14px; font-weight: 600; fill: #333; }
+.pipeline-channel { font-size: 12px; }
+.pipeline-channel--r { fill: #b72b2b; }
+.pipeline-channel--g { fill: #278044; }
+.pipeline-channel--b { fill: #336fc9; }
+.pipeline-connectors { fill: none; stroke: #a5abb2; stroke-width: 1; marker-end: url(#pipeline-arrow); }
+.pipeline-tool { fill: #f7f9fc; stroke: #cbd8eb; }
+.pipeline-tool-label { font-weight: 600; }
+.pipeline-offsets { fill: var(--accent); font-size: 16px; }
+.pipeline-offsets--g { fill: #278044; font-size: 14px; }
+.pipeline-offsets--r { fill: #b72b2b; font-size: 14px; }
+.pipeline-connectors .pipeline-reference { stroke: #336fc9; }
+.pipeline-connectors .pipeline-shift-g { stroke: #278044; }
+.pipeline-connectors .pipeline-shift-r { stroke: #b72b2b; }
+.pipeline-target { fill: none; stroke: #cbd8eb; stroke-dasharray: 3 3; }
+
+@media (max-width: 560px) {
+    .overview-example { gap: 16px; }
+    .overview-example img { height: 230px; }
+}
+
+/* A plate and its two measured offsets travel together, so each result is a
+   figure with the numbers directly under it rather than in a separate table. */
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 28px 20px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gallery figure { margin: 0; }
+
+.gallery .frame { aspect-ratio: 15 / 13; }
+
+.tile .tile-name {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin: 10px 0 0;
+}
+
+/* Offsets are read across, not down, so they stay on one line per plate. */
+.alignment-warning { color: #c62828; font-weight: 400; }
+
+.tile .exif {
+    gap: 2px 14px;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+@media (max-width: 760px) {
+    .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+}
+
+/* Section header carrying a key on the right: the h1 keeps its own size and
+   the key rides beside it, so the legend never pushes the gallery down. */
+
+.section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 20px;
+    width: 100%;
+    margin: 0 0 14px;
+}
+
+.section-head h1:not(.tldr) { width: auto; margin: 0; }
+
+/* Axis key for the results gallery. The convention is notation, so it is drawn
+   rather than written out: origin at the top-left corner, +x right, +y down. */
+
+.axes {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+}
+
+.axes svg { width: 88px; height: 49px; }
+
+.axes svg { display: block; flex: none; }
+
+.axes-label {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--accent);
+}
+
+.axes figcaption {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9aa0a6;
+}
+
+@media (max-width: 560px) {
+    .axes { gap: 9px; }
+    .axes svg { width: 66px; height: 37px; }
+    .axes figcaption { font-size: 11px; }
+}
+
+/* Self-selected plates link out to their source record; the course plates have
+   no link, so the underline is what separates the two galleries visually. */
+
+.tile-name a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: #cfd4d9;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.tile-name a:hover,
+.tile-name a:focus-visible {
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+}
+
+/* ---- three-up ---------------------------------------------------------- */
+
+.trio {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+
+.trio .frame { aspect-ratio: 15 / 13; }
+
+/* ---- horizontal overflow ----------------------------------------------- */
+/* Tables and the level row may exceed the column; they scroll on their own so
+   the page body never does. */
+
+.scroll-x {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.scroll-x .data { min-width: 460px; }
+
+.section p.exif--params { margin: 34px 0 0; }
+
+@media (max-width: 560px) {
+    .trio { gap: 8px; }
+}
+
+
+/* ---- pyramid, oblique projection --------------------------------------- */
+/* Five planes shrink left to right using the same projection and scale.
+   Labels share a baseline; the two passes frame the image sequence. */
+
+.pyr-fig { margin: 26px 0 18px; }
+
+.pyr-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border-radius: 10px;
+}
+
+.pyr3d {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: 720px;
+}
+
+.pyr-edge {
+    fill: none;
+    stroke: #d5d8db;
+    stroke-width: 1;
+    stroke-dasharray: 3 5;
+}
+
+.pyr-plane {
+    fill: none;
+    stroke: rgba(51, 51, 51, 0.22);
+    stroke-width: 1;
+}
+
+.pyr-label {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 13px;
+    text-anchor: middle;
+}
+
+.pyr-l { fill: #333; font-size: 15px; font-weight: 600; }
+.pyr-dim { fill: #666; }
+.pyr-scale {
+    fill: #777;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 13px;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "frac" 0;
+    text-anchor: middle;
+}
+
+.pyr-arrow {
+    fill: none;
+    stroke-width: 1;
+}
+
+.pyr-arrow--down { stroke: #a5abb2; }
+.pyr-arrow--up { stroke: var(--accent); }
+
+.pyr-arrow-head { fill: none; stroke: #a5abb2; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.pyr-arrow-head--up { stroke: var(--accent); }
+
+.pyr-lane-label {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    fill: #666;
+    text-anchor: middle;
+}
+
+.pyr-lane-label--up { fill: var(--accent); }
+
+/* Keep the horizontal sequence readable on narrow screens; only the diagram
+   scrolls, with keyboard access, while its caption stays within the page. */
+
+/* ---- full-resolution image viewer -------------------------------------- */
+
+.image-viewing-note {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #888;
+    text-align: left;
+}
+
+.image-expand { cursor: zoom-in; }
+.frame > .image-expand { display: block; width: 100%; height: 100%; }
+.frame > .image-expand:focus-visible { outline-offset: -4px; }
+.pyr3d .image-expand:focus-visible { outline-offset: 4px; }
+
+.compare-expand {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 20px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #666;
+}
+
+.compare-expand a { text-underline-offset: 3px; cursor: zoom-in; }
+.image-viewer-open { overflow: hidden; }
+
+.image-viewer {
+    width: calc(100% - 32px);
+    max-width: 1440px;
+    height: calc(100% - 32px);
+    height: calc(100dvh - 32px);
+    max-height: none;
+    padding: 16px;
+    border: 1px solid #34373b;
+    border-radius: 12px;
+    background: #141618;
+    color: #f4f5f6;
+}
+
+.image-viewer[open] { display: flex; flex-direction: column; gap: 14px; }
+.image-viewer::backdrop { background: rgba(0, 0, 0, 0.8); }
+.image-viewer :focus-visible { outline-color: #fff; }
+
+.image-viewer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex: none;
+    font-size: 14px;
+}
+
+.image-viewer-original { text-underline-offset: 4px; }
+.image-viewer-close {
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid #555a60;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.image-viewer-close:hover { background: #303438; }
+.image-viewer-stage { flex: 1; min-height: 0; display: flex; justify-content: center; }
+.image-viewer-image { width: 100%; height: 100%; object-fit: contain; min-height: 0; }
+.image-viewer-status { flex: none; margin: 0; text-align: center; font-size: 14px; }
+.image-viewer-status:empty { display: none; }
+
+/* ---- Python code blocks (Pygments) ------------------------------------- */
+
+.kernel-matrices {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 28px 64px;
+    margin: 28px 0 34px;
+}
+
+.kernel-matrices figure { margin: 0; }
+.kernel-matrices .caption { margin: 0 0 14px; text-align: center; }
+.kernel-matrices math { margin: 0; font-size: 22px; }
+
+.sobel-method {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    align-items: center;
+    gap: 24px;
+    margin: 28px 0 34px;
+}
+
+.sobel-method .kernel-matrices { flex-direction: column; gap: 24px; margin: 0; }
+.sobel-method .python-code { min-width: 0; margin: 0; }
+
+@media (max-width: 760px) {
+    .sobel-method { grid-template-columns: minmax(0, 1fr); }
+    .sobel-method .kernel-matrices { flex-direction: row; gap: 28px 48px; }
+}
+
+.python-code {
+    margin: 24px 0;
+    padding: 18px 20px;
+    overflow-x: auto;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #f8f9fa;
+    color: #333;
+    tab-size: 4;
+}
+
+.python-code pre { margin: 0; }
+.scoring-metrics { margin: 20px 0 28px; }
+.scoring-metrics figure { display: flex; flex-direction: column; min-width: 0; margin: 0; }
+.scoring-metrics .caption { margin: 0 0 10px; font-weight: 600; }
+.scoring-metrics .python-code { flex: 1; min-width: 0; margin: 0; }
+
+.python-code code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.python-code .py-k { color: #008000; font-weight: bold } /* Keyword */
+.python-code .py-kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.python-code .py-o { color: #666 } /* Operator */
+.python-code .py-nb { color: #008000 } /* Name.Builtin */
+.python-code .py-nf { color: #00F } /* Name.Function */
+.python-code .py-ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.python-code .py-w { color: #BBB } /* Text.Whitespace */
+.python-code .py-mi { color: #666 } /* Literal.Number.Integer */
+.python-code .py-mf { color: #666 } /* Literal.Number.Float */
+.python-code .py-c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
