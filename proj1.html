@@ -38,7 +38,7 @@
 
   <div class="section add-top-padding" id="overview">
     <h1>Overview</h1>
-    <p>The photographs in the Prokudin-Gorskii collection were recorded on glass plates through red, green, and blue filters. These grayscale images could then be transformed, recolored, and overlaid to produce a color image of the scene. In this project, I explore how to take these raw glass exposures and turn them into color images. Below is an example of the raw exposures and the color output after human manipulation.</p>
+    <p>The photographs in the Prokudin-Gorskii collection were recorded on glass plates through red, green, and blue filters. These grayscale images could then be transformed, recolored, and overlaid to produce a color image of the scene. In this project, I explore how to take these raw glass exposures and turn them into color images. Below is an example of the raw exposures and the color output after human manipulation as well as a general overview of the process of generating the output images.</p>
 
     <div class="overview-example">
       <figure>
@@ -119,30 +119,9 @@
   </div>
 
   <div class="section add-top-padding" id="single-scale">
-    <div class="section-head">
-      <h1>Single-scale search</h1>
-      <figure class="axes">
-        <figcaption>Offsets, in pixels</figcaption>
-        <svg viewBox="0 0 112 62" role="img"
-             aria-label="Offset convention: the origin is the top-left corner of the image, positive x runs right, positive y runs down.">
-          <rect x="6.75" y="6.75" width="98.5" height="48.5" rx="4"
-                fill="none" stroke="#d5d8db" stroke-dasharray="3 3"/>
-          <g stroke="var(--accent)" stroke-width="1.5" fill="none">
-            <path d="M7 7 H48"/>
-            <path d="M7 7 V36"/>
-          </g>
-          <g fill="var(--accent)">
-            <polygon points="48,3.5 56,7 48,10.5"/>
-            <polygon points="3.5,36 7,44 10.5,36"/>
-            <circle cx="7" cy="7" r="2.5"/>
-          </g>
-          <text class="axes-label" x="60" y="10.5">+x</text>
-          <text class="axes-label" x="12" y="47">+y</text>
-        </svg>
-      </figure>
-    </div>
+    <h1>Single-scale search</h1>
 
-    <p>The naive way to align the images is to make the assumption that the images are already somewhat closely aligned and all that is needed is to search a window of displacements to figure out which displacement optimizes some similarity metric. Specifically, I fix the B channel and then compute transforms and scores by individually manipulating the R and G channels relative to the B channel. I used L2 and NCC. One notable aspect of the implementation is the use of slicing to crop the image to make sure the similarity metrics measure only the actual content of the image and not the borders.</p>
+    <p>The naive way to align the images is to make the assumption that the images are already somewhat closely aligned and all that is needed is to search a window of displacements to optimize some similarity metric. Specifically, I fix the B channel and then compute transforms and scores by individually manipulating the R and G channels relative to the B channel. One notable aspect of the implementation is the use of slicing to crop the image to make sure the similarity metrics measure only the actual content of the image and not the borders.</p>
     <!-- Python code omitted from the rendered webpage.
     <div class="pair scoring-metrics">
       <figure>
@@ -200,6 +179,67 @@
     -->
 
     
+    <p>For the scoring metrics, I use L2 and NCC. I treat each channel as a 2D matrix and each scoring function as taking in two channels and producing a score of how similar they are.</p>
+    <p>L2 measures the difference between pixels at the same location across the two matrices. It squares each difference, sums the squared differences, and then takes the square root of that sum. This is the Frobenius norm of the difference between the matrices.</p>
+    <p>NCC measures similarity between pixel intensity patterns. I first subtract each image's mean, then take the Frobenius inner product, which is the sum of the products of corresponding pixel values across the two images. I divide this by the product of the Frobenius norms of the mean-centered matrices. Mean subtraction removes global brightness offsets, while normalization accounts for positive contrast scaling. I negate NCC so that both scoring functions use the same optimization rule: minimize the score.</p>
+
+    <div class="pair metric-equations">
+      <figure>
+        <figcaption class="caption">L2 — minimize</figcaption>
+        <div class="metric-equation" tabindex="0" role="region" aria-label="L2 equation">
+          <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <semantics>
+              <mrow><msub><mrow><mo fence="true">‖</mo><mrow><mi>A</mi><mo>−</mo><mi>B</mi></mrow><mo fence="true">‖</mo></mrow><mi mathvariant="normal">F</mi></msub></mrow>
+              <annotation encoding="application/x-tex">\lVert A-B\rVert_F</annotation>
+            </semantics>
+          </math>
+        </div>
+      </figure>
+      <figure>
+        <figcaption class="caption">Negative NCC score — minimize</figcaption>
+        <div class="metric-equation" tabindex="0" role="region" aria-label="NCC score equation">
+          <div class="ncc-equation-layout">
+          <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <semantics>
+              <mrow><mo>−</mo><mfrac><msub><mrow><mo fence="true">⟨</mo><mrow><mi>A</mi><mo>−</mo><mover accent="true"><mi>A</mi><mo>^</mo></mover></mrow><mo>,</mo><mrow><mi>B</mi><mo>−</mo><mover accent="true"><mi>B</mi><mo>^</mo></mover></mrow><mo fence="true">⟩</mo></mrow><mi mathvariant="normal">F</mi></msub><mrow><msub><mrow><mo fence="true">‖</mo><mrow><mi>A</mi><mo>−</mo><mover accent="true"><mi>A</mi><mo>^</mo></mover></mrow><mo fence="true">‖</mo></mrow><mi mathvariant="normal">F</mi></msub><msub><mrow><mo fence="true">‖</mo><mrow><mi>B</mi><mo>−</mo><mover accent="true"><mi>B</mi><mo>^</mo></mover></mrow><mo fence="true">‖</mo></mrow><mi mathvariant="normal">F</mi></msub></mrow></mfrac></mrow>
+              <annotation encoding="application/x-tex">-\frac{\langle A-\hat A,\;B-\hat B\rangle_F}{\lVert A-\hat A\rVert_F\lVert B-\hat B\rVert_F}</annotation>
+            </semantics>
+          </math>
+          <math class="metric-definitions" xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+            <semantics>
+              <mtable columnalign="left" rowspacing="0.5em"><mtr><mtd><mrow><mover accent="true"><mi>A</mi><mo>^</mo></mover><mo>=</mo><mtext>mean</mtext><mo>(</mo><mi>A</mi><mo>)</mo><msub><mn mathvariant="bold">1</mn><mrow><mi>h</mi><mo>×</mo><mi>w</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><mover accent="true"><mi>B</mi><mo>^</mo></mover><mo>=</mo><mtext>mean</mtext><mo>(</mo><mi>B</mi><mo>)</mo><msub><mn mathvariant="bold">1</mn><mrow><mi>h</mi><mo>×</mo><mi>w</mi></mrow></msub></mrow></mtd></mtr></mtable>
+              <annotation encoding="application/x-tex">\hat A=\operatorname{mean}(A)\mathbf{1}_{h\times w},\quad\hat B=\operatorname{mean}(B)\mathbf{1}_{h\times w}</annotation>
+            </semantics>
+          </math>
+          </div>
+        </div>
+      </figure>
+    </div>
+
+    <div class="section-head section-head--results">
+      <h2>Results</h2>
+      <figure class="axes">
+        <figcaption>Offsets, in pixels</figcaption>
+        <svg viewBox="0 0 112 62" role="img"
+             aria-label="Offset convention: the origin is the top-left corner of the image, positive x runs right, positive y runs down.">
+          <rect x="6.75" y="6.75" width="98.5" height="48.5" rx="4"
+                fill="none" stroke="#d5d8db" stroke-dasharray="3 3"/>
+          <g stroke="var(--accent)" stroke-width="1.5" fill="none">
+            <path d="M7 7 H48"/>
+            <path d="M7 7 V36"/>
+          </g>
+          <g fill="var(--accent)">
+            <polygon points="48,3.5 56,7 48,10.5"/>
+            <polygon points="3.5,36 7,44 10.5,36"/>
+            <circle cx="7" cy="7" r="2.5"/>
+          </g>
+          <text class="axes-label" x="60" y="10.5">+x</text>
+          <text class="axes-label" x="12" y="47">+y</text>
+        </svg>
+      </figure>
+    </div>
+
+    <p>Here are the results of running my single-scale search on the 3 jpeg images. For the smaller images, NCC and L2 yielded the same displacements, but I chose to use NCC for the larger images since it is more robust to lighting variations.</p>
 
     <ul class="gallery">
       <li>
@@ -249,8 +289,7 @@
       <span>Border crop <b>15%</b></span>
     </p>
 
-    <h2>L2 against NCC</h2>
-    <p>For the smaller images, NCC and L2 yielded the same displacements, but I chose to use NCC for the larger images since it is more robust to lighting variations.</p>
+
     <div class="scroll-x">
       <table class="data">
         <thead>
@@ -314,14 +353,16 @@
         </tr>
         </tbody>
       </table>
+      <p class="caption">Scores and offsets for jpeg images.</p>
     </div>
   </div>
+  
 
   <div class="section add-top-padding" id="pyramid">
     <h1>Image pyramid</h1>
     <p>Running the single-scale search on the larger TIF images is extremely inefficient and takes a substantial amount of time to produce an alignment. Instead, I adopted a pyramid-based approach in which I approximate the optimal displacement at a lower resolution and then refine the estimate at higher resolutions, which should take substantially less time.</p>
 
-    <p>I downsample the images and run pyramid search recursively on the downsampled images. At the lowest resolution, I perform a dense alignment search and return the transform, which is multiplied by two to match the next higher resolution. Then, using that transform, I perform a small refinement pass in a 5×5 pixel window to see if there is a better solution. I repeat this all the way back to the top of the pyramid to produce an optimal displacement very quickly.</p>
+    <p>I downsample the images and run pyramid search recursively on the downsampled images until the image dimensions are below 256 pixels. At the lowest resolution, I perform a dense alignment search and return the transform, which is multiplied by two to match the next resolution. Then, using that transform, I perform a small refinement pass in a 5×5 pixel window to see if there is a better solution. I repeat this all the way back to the top of the pyramid to produce a good displacement very quickly.</p>
 
     <figure class="pyr-fig">
       <div class="pyr-scroll" tabindex="0" role="region" aria-label="Image pyramid">
@@ -459,7 +500,7 @@
 
   <div class="section add-top-padding" id="results">
     <div class="section-head">
-      <h1>Results</h1>
+      <h2>Results</h2>
       <figure class="axes">
         <figcaption>Offsets, in pixels</figcaption>
         <svg viewBox="0 0 112 62" role="img"
@@ -498,6 +539,10 @@
               <span>R <b>(3, 12)</b></span>
               <span>t <b>0.06 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.957</b></span>
+              <span>R <b>-0.908</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -510,6 +555,10 @@
               <span>G <b>(4, 25)</b></span>
               <span>R <b>(-4, 58)</b></span>
               <span>t <b>1.00 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.909</b></span>
+              <span>R <b>-0.776</b></span>
             </p>
           </figcaption>
         </figure>
@@ -524,6 +573,10 @@
               <span>R <b>(44, 63)</b></span>
               <span>t <b>0.99 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.677</b></span>
+              <span>R <b>-0.235</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -536,6 +589,10 @@
               <span>G <b>(17, 60)</b></span>
               <span>R <b>(14, 124)</b></span>
               <span>t <b>0.98 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.753</b></span>
+              <span>R <b>-0.782</b></span>
             </p>
           </figcaption>
         </figure>
@@ -550,6 +607,10 @@
               <span>R <b>(23, 89)</b></span>
               <span>t <b>1.02 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.804</b></span>
+              <span>R <b>-0.629</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -562,6 +623,10 @@
               <span>G <b>(7, 40)</b></span>
               <span>R <b>(11, 130)</b></span>
               <span>t <b>1.07 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.830</b></span>
+              <span>R <b>-0.698</b></span>
             </p>
           </figcaption>
         </figure>
@@ -576,6 +641,10 @@
               <span>R <b>(14, 178)</b></span>
               <span>t <b>1.03 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.935</b></span>
+              <span>R <b>-0.901</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -588,6 +657,10 @@
               <span>G <b>(2, -3)</b></span>
               <span>R <b>(2, 3)</b></span>
               <span>t <b>0.06 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.951</b></span>
+              <span>R <b>-0.858</b></span>
             </p>
           </figcaption>
         </figure>
@@ -602,6 +675,10 @@
               <span>R <b>(7, 68)</b></span>
               <span>t <b>1.01 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.819</b></span>
+              <span>R <b>-0.734</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -614,6 +691,10 @@
               <span>G <b>(29, 79)</b></span>
               <span>R <b>(37, 176)</b></span>
               <span>t <b>1.07 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.767</b></span>
+              <span>R <b>-0.742</b></span>
             </p>
           </figcaption>
         </figure>
@@ -628,6 +709,10 @@
               <span>R <b>(-25, 96)</b></span>
               <span>t <b>1.20 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.870</b></span>
+              <span>R <b>-0.913</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -640,6 +725,10 @@
               <span>G <b>(14, 52)</b></span>
               <span>R <b>(11, 111)</b></span>
               <span>t <b>1.00 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.924</b></span>
+              <span>R <b>-0.892</b></span>
             </p>
           </figcaption>
         </figure>
@@ -654,6 +743,10 @@
               <span>R <b>(3, 6)</b></span>
               <span>t <b>0.06 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.931</b></span>
+              <span>R <b>-0.860</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -666,6 +759,10 @@
               <span>G <b>(-7, 15)</b></span>
               <span>R <b>(-16, 82)</b></span>
               <span>t <b>1.06 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.888</b></span>
+              <span>R <b>-0.766</b></span>
             </p>
           </figcaption>
         </figure>
@@ -685,6 +782,10 @@
               <span>R <b>(32, 87)</b></span>
               <span>t <b>1.01 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.928</b></span>
+              <span>R <b>-0.898</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -697,6 +798,10 @@
               <span>G <b>(-12, 44)</b></span>
               <span>R <b>(-27, 99)</b></span>
               <span>t <b>1.07 s</b></span>
+            </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.843</b></span>
+              <span>R <b>-0.746</b></span>
             </p>
           </figcaption>
         </figure>
@@ -711,6 +816,10 @@
               <span>R <b>(-29, 56)</b></span>
               <span>t <b>1.07 s</b></span>
             </p>
+            <p class="exif ncc-scores" aria-label="Negative NCC scores; lower is better">
+              <span>NCC G <b>-0.944</b></span>
+              <span>R <b>-0.936</b></span>
+            </p>
           </figcaption>
         </figure>
       </li>
@@ -721,7 +830,7 @@
     <h1>Bells &amp; whistles</h1>
 
     <h2>Sobel edge detection</h2>
-    <p>The Emir plates are quite interesting in that NCC and L2 fail to properly align the image. Out of all the source plates, Emir is the only one with a deeply saturated color present in a large portion of the image, which means that this region will be very anti-correlated across channels. Since the robe occupies a significant portion of the image, it throws off the pixel-based alignment methods. However, edges should be similar across the channels, so we can potentially use them to align the images. We can do this using convolution and Sobel filters.</p>
+    <p>Both negative NCC and L2 failed to align Emir correctly using the pyramid implementation since the brightness of the robe, which takes up a large portion of the image, differs significantly across the red, green, and blue exposures which throws off the alignment. However, edges should be similar across the channels, so we can potentially use them to align the images. We can do this using convolution and Sobel filters.</p>
 
     <p>To start, I made a custom convolve function that takes in a single-channel image, convolves it with a 3×3 filter, and returns the result.</p>
 
@@ -743,15 +852,33 @@
     <p>I then defined the two Sobel filters for extracting the vertical and horizontal gradients and convolved the image with each kernel. I then calculated the magnitude of the gradient at each pixel, and that output represents the edges in the image.</p>
 
     
-    <div class="sobel-method sobel-method--kernels-only">
-      <div class="kernel-matrices">
-        <figure>
-          <figcaption class="caption">Kernel X</figcaption>
-          <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+    <figure class="sobel-flow">
+      <div class="sobel-flow-repeat">×3 <span>R, G, B</span></div>
+      <div class="sobel-flow-scroll" tabindex="0" role="region" aria-label="Sobel convolution diagram">
+        <div class="sobel-flow-stage">
+          <svg class="sobel-flow-arrows" viewBox="0 0 800 390" aria-hidden="true">
+            <defs>
+              <marker id="sobel-flow-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 5 3-5 3" fill="none" stroke="#a5abb2" stroke-width="1.2"/></marker>
+            </defs>
+            <path d="M130 194 H150 V90 H166"/>
+            <path d="M150 194 V296 H166"/>
+            <path d="M322 90 H344"/>
+            <path d="M322 296 H344"/>
+            <path d="M478 94 H510 V178 H536"/>
+            <path d="M478 296 H510 V208 H536"/>
+            <path d="M652 193 H666"/>
+          </svg>
+          <figure class="sobel-flow-node sobel-flow-input">
+            <figcaption>Single channel</figcaption>
+            <div class="frame" data-sobel-slot="input"><img src="assets/proj01/web/pyr-l0.jpg" data-fullres="assets/proj01/out/misc/emir_pyramid_l0_3209x3702.jpg" alt=""></div>
+          </figure>
+          <div class="sobel-flow-kernel sobel-flow-kernel-x">
+            <span class="sobel-flow-operation">Convolve · K<sub>x</sub></span>
+            <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
             <semantics>
               <mrow>
                 <mo stretchy="true">[</mo>
-                <mtable columnalign="center" columnspacing="0.8em" rowspacing="0.35em">
+                <mtable columnalign="center" columnwidth="36px 36px 36px" columnspacing="0" rowspacing="0.35em">
                 <mtr><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr>
                 <mtr><mtd><mo>−</mo><mn>2</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>2</mn></mtd></mtr>
                 <mtr><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr>
@@ -761,14 +888,14 @@
               <annotation encoding="application/x-tex">\begin{bmatrix}-1 &amp; 0 &amp; 1 \\ -2 &amp; 0 &amp; 2 \\ -1 &amp; 0 &amp; 1\end{bmatrix}</annotation>
             </semantics>
           </math>
-        </figure>
-        <figure>
-          <figcaption class="caption">Kernel Y</figcaption>
-          <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+          </div>
+          <div class="sobel-flow-kernel sobel-flow-kernel-y">
+            <span class="sobel-flow-operation">Convolve · K<sub>y</sub></span>
+            <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
             <semantics>
               <mrow>
                 <mo stretchy="true">[</mo>
-                <mtable columnalign="center" columnspacing="0.8em" rowspacing="0.35em">
+                <mtable columnalign="center" columnwidth="36px 36px 36px" columnspacing="0" rowspacing="0.35em">
                 <mtr><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mo>−</mo><mn>2</mn></mtd><mtd><mo>−</mo><mn>1</mn></mtd></mtr>
                 <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
                 <mtr><mtd><mn>1</mn></mtd><mtd><mn>2</mn></mtd><mtd><mn>1</mn></mtd></mtr>
@@ -778,8 +905,33 @@
               <annotation encoding="application/x-tex">\begin{bmatrix}-1 &amp; -2 &amp; -1 \\ 0 &amp; 0 &amp; 0 \\ 1 &amp; 2 &amp; 1\end{bmatrix}</annotation>
             </semantics>
           </math>
-        </figure>
+          </div>
+          <figure class="sobel-flow-node sobel-flow-gx">
+            <figcaption>G<sub>x</sub> · x derivative</figcaption>
+            <div class="frame" data-sobel-slot="gx"><img src="assets/proj01/web/emir-sobel-gx-b.jpg" data-fullres="assets/proj01/emir_sobel_gx_b.jpg" alt=""></div>
+          </figure>
+          <figure class="sobel-flow-node sobel-flow-gy">
+            <figcaption>G<sub>y</sub> · y derivative</figcaption>
+            <div class="frame" data-sobel-slot="gy"><img src="assets/proj01/web/emir-sobel-gy-b.jpg" data-fullres="assets/proj01/emir_sobel_gy_b.jpg" alt=""></div>
+          </figure>
+          <div class="sobel-flow-magnitude">
+            <span>Magnitude</span>
+            <div class="sobel-flow-equation">
+              <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+                <semantics>
+                  <msqrt><mrow><msubsup><mi>G</mi><mi>x</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>G</mi><mi>y</mi><mn>2</mn></msubsup></mrow></msqrt>
+                  <annotation encoding="application/x-tex">\sqrt{G_x^2+G_y^2}</annotation>
+                </semantics>
+              </math>
+            </div>
+          </div>
+          <figure class="sobel-flow-node sobel-flow-output">
+            <figcaption>Gradient magnitude</figcaption>
+            <div class="frame" data-sobel-slot="magnitude"><img src="assets/proj01/web/emir-sobel-b.jpg" data-fullres="assets/proj01/out/misc/emir_sobel_b.jpg" alt=""></div>
+          </figure>
+        </div>
       </div>
+    </figure>
     <!-- Python code omitted from the rendered webpage.
       <div class="python-code" tabindex="0" role="region" aria-label="Python Sobel function">
 <pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">sobel</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">):</span>
@@ -791,9 +943,7 @@
     <span class="py-k">return</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">sqrt</span><span class="py-p">(</span><span class="py-n">np</span><span class="py-o">.</span><span class="py-n">square</span><span class="py-p">(</span><span class="py-n">gradient_x</span><span class="py-p">)</span> <span class="py-o">+</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">square</span><span class="py-p">(</span><span class="py-n">gradient_y</span><span class="py-p">))</span></code></pre>
       </div>
     -->
-    </div>
 
-    <h3>Gradient magnitude, per channel</h3>
     <figure>
       <div class="trio">
         <figure>
@@ -856,7 +1006,7 @@
             <th scope="col">Matched on</th>
             <th scope="col">G (x, y)</th>
             <th scope="col">R (x, y)</th>
-            <th scope="col">Score G / R</th>
+            <th scope="col">NCC Score G / R</th>
             <th scope="col">Time</th>
           </tr>
         </thead>
@@ -877,6 +1027,7 @@
         </tr>
         </tbody>
       </table>
+      <p class="caption">*Sobel NCC Scores are computed on the gradient magntiude images</p>
     </div>
   </div>
 
