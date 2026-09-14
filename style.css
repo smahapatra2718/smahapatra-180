@@ -1028,6 +1028,9 @@ td.placeholder { font-style: italic; }
 .sobel-method .kernel-matrices { flex-direction: column; gap: 24px; margin: 0; }
 .sobel-method .python-code { min-width: 0; margin: 0; }
 
+.sobel-method--kernels-only { grid-template-columns: minmax(0, 1fr); }
+.sobel-method--kernels-only .kernel-matrices { flex-direction: row; gap: 28px 64px; }
+
 @media (max-width: 760px) {
     .sobel-method { grid-template-columns: minmax(0, 1fr); }
     .sobel-method .kernel-matrices { flex-direction: row; gap: 28px 48px; }

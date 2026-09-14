@@ -38,7 +38,7 @@
 
   <div class="section add-top-padding" id="overview">
     <h1>Overview</h1>
-    <p>The Prokudin-Gorskii photo collection were recorded onto a glass plate through a red, green, and blue filter. These gray scale images could then be tranformed, recolored, and then overlayed to produce a color image of the scene. In this project I explore how to take these raw glass exposures and turn them into colored images. Below is an example of the raw exposures and then the colored output after human manipulation</p>
+    <p>The photographs in the Prokudin-Gorskii collection were recorded on glass plates through red, green, and blue filters. These grayscale images could then be transformed, recolored, and overlaid to produce a color image of the scene. In this project, I explore how to take these raw glass exposures and turn them into color images. Below is an example of the raw exposures and the color output after human manipulation.</p>
 
     <div class="overview-example">
       <figure>
@@ -142,7 +142,8 @@
       </figure>
     </div>
 
-    <p>The naive way to align the images is to take the assumption that the images are already somewhat closely aligned and all that is needed is to search a window of displacements to figure out which displacement optimizes some similarity metric. Speficially I fix the B channel and then compute transforms and scores by individually manipuylating the R and G channels relative to the B channel. I used L2 and NCC whose implementations are below. One notable aspect of the implementation is the usage of slicing to crop the image to make sure the similarity metrics are only measuring the actual content of the image and not the borders.</p>
+    <p>The naive way to align the images is to make the assumption that the images are already somewhat closely aligned and all that is needed is to search a window of displacements to figure out which displacement optimizes some similarity metric. Specifically, I fix the B channel and then compute transforms and scores by individually manipulating the R and G channels relative to the B channel. I used L2 and NCC. One notable aspect of the implementation is the use of slicing to crop the image to make sure the similarity metrics measure only the actual content of the image and not the borders.</p>
+    <!-- Python code omitted from the rendered webpage.
     <div class="pair scoring-metrics">
       <figure>
         <figcaption class="caption">L2</figcaption>
@@ -171,8 +172,10 @@
         </div>
       </figure>
     </div>
+    -->
 
-    <p>The actual alignment code takes in the two images, the scoring metric, how many displacements to test across each axis, the number of pixels each displacement takes, and a current_transform argument which can be thought of as a prior on where to start searching which is useful in the pyramid implementation.</p>
+    <p>The alignment function takes in the two images, the scoring metric, how many displacements to test along each axis, the step size in pixels, and a current_transform argument. This argument provides a starting point for the search, which is useful in the pyramid implementation.</p>
+    <!-- Python code omitted from the rendered webpage.
     <div class="python-code" tabindex="0" role="region" aria-label="Python single-scale alignment function">
 <pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">align</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">method</span><span class="py-p">,</span> <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-mi">15</span><span class="py-p">,</span> <span class="py-n">step_size</span><span class="py-o">=</span><span class="py-mi">1</span><span class="py-p">,</span> <span class="py-n">curr_transform</span><span class="py-o">=</span><span class="py-p">(</span><span class="py-mi">0</span><span class="py-p">,</span> <span class="py-mi">0</span><span class="py-p">)):</span>
     <span class="py-n">best_transform</span> <span class="py-o">=</span> <span class="py-n">curr_transform</span> <span class="py-c1"># used when doing pyramid fine tuning on the way back up</span>
@@ -194,6 +197,7 @@
     <span class="py-c1"># returns the transformed image and transform itself</span>
     <span class="py-k">return</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">roll</span><span class="py-p">(</span><span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">best_transform</span><span class="py-p">,</span> <span class="py-n">axis</span><span class="py-o">=</span><span class="py-p">(</span><span class="py-mi">0</span><span class="py-p">,</span> <span class="py-mi">1</span><span class="py-p">)),</span> <span class="py-n">best_transform</span></code></pre>
     </div>
+    -->
 
     
 
@@ -246,7 +250,7 @@
     </p>
 
     <h2>L2 against NCC</h2>
-    <p>For the smaller images NCC and L2 yielded the same displacements but I chose to use NCC for the larger scale images since it is more robust to lighting variations in the image. </p>
+    <p>For the smaller images, NCC and L2 yielded the same displacements, but I chose to use NCC for the larger images since it is more robust to lighting variations.</p>
     <div class="scroll-x">
       <table class="data">
         <thead>
@@ -315,9 +319,9 @@
 
   <div class="section add-top-padding" id="pyramid">
     <h1>Image pyramid</h1>
-    <p>Running the single scale search on the larger TIF images is extremely inefficeint and takes a substantial amount of time to produce an alignment. Instead I adopted a pyramid based approach where I approximate the optimal displacement at a lower resolution and then refine the estimate at higher resolutions which should take a substantially less amount of time.</p>
+    <p>Running the single-scale search on the larger TIF images is extremely inefficient and takes a substantial amount of time to produce an alignment. Instead, I adopted a pyramid-based approach in which I approximate the optimal displacement at a lower resolution and then refine the estimate at higher resolutions, which should take substantially less time.</p>
 
-    <p>I downsample the images and run pyramid search recursively on the downsampled image. At the very lowest resolution I do a very dense alignment and return that transform which gets multiplied by two so it matches with the next highest resolution. Then using that transform I perform a small refinement pass in a 5x5 pixel window to see if there is a more optimal solution. I then repeat this all the way back to the top of the pyramid to produce a optimal displacement very quickly.</p>
+    <p>I downsample the images and run pyramid search recursively on the downsampled images. At the lowest resolution, I perform a dense alignment search and return the transform, which is multiplied by two to match the next higher resolution. Then, using that transform, I perform a small refinement pass in a 5×5 pixel window to see if there is a better solution. I repeat this all the way back to the top of the pyramid to produce an optimal displacement very quickly.</p>
 
     <figure class="pyr-fig">
       <div class="pyr-scroll" tabindex="0" role="region" aria-label="Image pyramid">
@@ -382,6 +386,7 @@
       <p class="caption">The levels can be clicked to view how much detail is lost at each downsample.</p>
     </figure>
 
+    <!-- Python code omitted from the rendered webpage.
     <div class="python-code" tabindex="0" role="region" aria-label="Python pyramid search function">
 <pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">pyramid_search</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">method</span><span class="py-p">,</span> <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-mi">15</span><span class="py-p">,</span> <span class="py-n">step_size</span><span class="py-o">=</span><span class="py-mi">1</span><span class="py-p">,</span> <span class="py-n">min_size</span><span class="py-o">=</span><span class="py-mi">256</span><span class="py-p">):</span>
 
@@ -414,6 +419,7 @@
     <span class="py-c1"># refine course displacement</span>
     <span class="py-k">return</span> <span class="py-n">align</span><span class="py-p">(</span><span class="py-n">a</span><span class="py-p">,</span> <span class="py-n">b</span><span class="py-p">,</span> <span class="py-n">method</span><span class="py-o">=</span><span class="py-n">method</span><span class="py-p">,</span> <span class="py-n">num_steps</span><span class="py-o">=</span><span class="py-mi">2</span><span class="py-p">,</span> <span class="py-n">curr_transform</span><span class="py-o">=</span><span class="py-n">transform</span><span class="py-p">)</span></code></pre>
     </div>
+    -->
 
 <!-- 
     <h2>Cost</h2>
@@ -475,7 +481,7 @@
       </figure>
     </div>
 
-    <p>These are the results of running the pyramid pipeline using NCC as the score metric on all 17 full sized TIF images. All of the images aligned well except for the emir which is explored in the bells & whistles section.</p>
+    <p>These are the results of running the pyramid pipeline using NCC as the scoring metric on all 17 images at their original resolutions. All of the images aligned well except for Emir, which is explored in the bells &amp; whistles section.</p>
 
     <ul class="gallery">
       <!-- One tile per plate, from the pyramid NCC run on raw pixels. Offsets
@@ -590,7 +596,7 @@
         <figure class="tile">
           <div class="frame"><img src="assets/proj01/web/religous_painting-raw.jpg" data-fullres="assets/proj01/out/pyramid/religous_painting__pyramid_ncc_raw__gx3y28_s-0.819__rx7y68_s-0.734.jpg" alt=""></div>
           <figcaption>
-            <p class="tile-name">religous_painting</p>
+            <p class="tile-name">religious painting</p>
             <p class="exif">
               <span>G <b>(3, 28)</b></span>
               <span>R <b>(7, 68)</b></span>
@@ -715,10 +721,11 @@
     <h1>Bells &amp; whistles</h1>
 
     <h2>Sobel edge detection</h2>
-    <p>The emir plates are quite interesting in that NCC and L2 fail to properly align the image. Out of all the source plates the emir is the only one with a deeply saturated color present in a large portion of the image which means that across channels that region will be very anti-correlated. Since the robe is a significant portion of the image it throws of the pixel based alignment methods. However edges should be similar across the channels so we can maybe use that to align the images. We can do this using convolution and sobel filters.</p>
+    <p>The Emir plates are quite interesting in that NCC and L2 fail to properly align the image. Out of all the source plates, Emir is the only one with a deeply saturated color present in a large portion of the image, which means that this region will be very anti-correlated across channels. Since the robe occupies a significant portion of the image, it throws off the pixel-based alignment methods. However, edges should be similar across the channels, so we can potentially use them to align the images. We can do this using convolution and Sobel filters.</p>
 
-    <p>To start I first made a custom convolve function that takes in a single channel image and convolves it with a 3x3 filter and then returns the result.</p>
+    <p>To start, I made a custom convolve function that takes in a single-channel image, convolves it with a 3×3 filter, and returns the result.</p>
 
+    <!-- Python code omitted from the rendered webpage.
     <div class="python-code" tabindex="0" role="region" aria-label="Python convolution function">
 <pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">convolve</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">,</span> <span class="py-n">kernel</span><span class="py-p">):</span>
     <span class="py-n">h</span><span class="py-p">,</span> <span class="py-n">w</span> <span class="py-o">=</span> <span class="py-n">img</span><span class="py-o">.</span><span class="py-n">shape</span>
@@ -731,11 +738,12 @@
         <span class="py-k">for</span> <span class="py-n">j</span> <span class="py-ow">in</span> <span class="py-nb">range</span><span class="py-p">(</span><span class="py-mi">3</span><span class="py-p">)</span>
     <span class="py-p">)</span></code></pre>
     </div>
+    -->
 
-    <p>I then defined the two sobel filters for extracting the vertical and horizontal gradients and convolved the image with the kernel. I then calculated the magnitude of the gradient at each pixel and that output represents the edges in the image.</p>
+    <p>I then defined the two Sobel filters for extracting the vertical and horizontal gradients and convolved the image with each kernel. I then calculated the magnitude of the gradient at each pixel, and that output represents the edges in the image.</p>
 
     
-    <div class="sobel-method">
+    <div class="sobel-method sobel-method--kernels-only">
       <div class="kernel-matrices">
         <figure>
           <figcaption class="caption">Kernel X</figcaption>
@@ -772,6 +780,7 @@
           </math>
         </figure>
       </div>
+    <!-- Python code omitted from the rendered webpage.
       <div class="python-code" tabindex="0" role="region" aria-label="Python Sobel function">
 <pre><code class="language-python"><span class="py-k">def</span><span class="py-w"> </span><span class="py-nf">sobel</span><span class="py-p">(</span><span class="py-n">img</span><span class="py-p">):</span>
     <span class="py-c1"># calculate gradients</span>
@@ -781,6 +790,7 @@
     <span class="py-c1"># take magnitudes of gradients</span>
     <span class="py-k">return</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">sqrt</span><span class="py-p">(</span><span class="py-n">np</span><span class="py-o">.</span><span class="py-n">square</span><span class="py-p">(</span><span class="py-n">gradient_x</span><span class="py-p">)</span> <span class="py-o">+</span> <span class="py-n">np</span><span class="py-o">.</span><span class="py-n">square</span><span class="py-p">(</span><span class="py-n">gradient_y</span><span class="py-p">))</span></code></pre>
       </div>
+    -->
     </div>
 
     <h3>Gradient magnitude, per channel</h3>
@@ -799,10 +809,10 @@
           <figcaption class="caption">B</figcaption>
         </figure>
       </div>
-      <p class="caption">Magnitude of the gradients for the Emir plates across the red, blue, and green channels.</p>
+      <p class="caption">Magnitude of the gradients for the Emir plates across the red, green, and blue channels.</p>
     </figure>
 
-    <p>I can now perform pyramid alignment on the images above to produce an offset that is used to shift the original plates. As you can see below the Sobel alignment is significantly better than the raw alignment.</p>
+    <p>I can now perform pyramid alignment on the images above to produce offsets that are used to shift the original plates. As you can see below, the Sobel alignment is significantly better than the raw alignment.</p>
     <figure class="viewset">
       <div class="viewset-controls" role="group" aria-label="Comparison view">
         <button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
@@ -826,18 +836,18 @@
             <div class="frame" style="aspect-ratio: 15 / 13">
               <img src="assets/proj01/web/emir-raw-lg.jpg" data-fullres="assets/proj01/out/pyramid/emir__pyramid_ncc_raw__gx24y49_s-0.677__rx44y63_s-0.235.jpg" alt="">
             </div>
-            <p class="caption">Raw Alignment.</p>
+            <p class="caption">Raw alignment.</p>
           </div>
           <div>
             <div class="frame" style="aspect-ratio: 15 / 13">
               <img src="assets/proj01/web/emir-sobel-lg.jpg" data-fullres="assets/proj01/out/pyramid_edge/emir__pyramid_ncc_gradient__gx24y49_s-0.487__rx40y107_s-0.515.jpg" alt="">
             </div>
-            <p class="caption">Sobel Alignment.</p>
+            <p class="caption">Sobel alignment.</p>
           </div>
         </div>
       </div>
 
-      <p class="caption">Sobel vs Raw Alignment.</p>
+      <p class="caption">Sobel vs. raw alignment.</p>
     </figure>
     <div class="scroll-x">
       <table class="data">
