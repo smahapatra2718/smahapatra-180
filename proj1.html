@@ -216,6 +216,9 @@
       </figure>
     </div>
 
+    <p class="caption">*In the context of this impementation, functionally any frobenius operation is equivalent to taking the matrix operand flattening it into a vector and taking the euclidian norm or dot product.</p>
+
+
     <div class="section-head section-head--results">
       <h2>Results</h2>
       <figure class="axes">
@@ -830,7 +833,7 @@
     <h1>Bells &amp; whistles</h1>
 
     <h2>Sobel edge detection</h2>
-    <p>Both negative NCC and L2 failed to align Emir correctly using the pyramid implementation since the brightness of the robe, which takes up a large portion of the image, differs significantly across the red, green, and blue exposures which throws off the alignment. However, edges should be similar across the channels, so we can potentially use them to align the images. We can do this using convolution and Sobel filters.</p>
+    <p>Both negative NCC and L2 failed to align Emir correctly using the pyramid implementation since the robe is quite saturated and takes up a large portion of the image which leads to significant differences in brightness (in the robe region) across the red, green, and blue exposures which throws off the alignment. However, edges should be similar across the channels, so we can potentially use them to align the images. We can do this using convolution and Sobel filters which are convolution kernels that can be used to approximate horizontal and vertical gradients of an image.</p>
 
     <p>To start, I made a custom convolve function that takes in a single-channel image, convolves it with a 3×3 filter, and returns the result.</p>
 
