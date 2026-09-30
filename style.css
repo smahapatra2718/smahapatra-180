@@ -605,8 +605,8 @@ td.placeholder { font-style: italic; }
 }
 
 .is-playing .player-toggle-icon {
-    clip-path: polygon(0 0, 34% 0, 34% 100%, 0 100%, 0 0,
-                       66% 0, 100% 0, 100% 100%, 66% 100%);
+    clip-path: none;
+    background: linear-gradient(to right, currentColor 0 34%, transparent 34% 66%, currentColor 66% 100%);
 }
 
 .player-readout { font-size: 13px; color: #888; }
@@ -1113,3 +1113,971 @@ td.placeholder { font-style: italic; }
 .python-code .py-mi { color: #666 } /* Literal.Number.Integer */
 .python-code .py-mf { color: #666 } /* Literal.Number.Float */
 .python-code .py-c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+
+/* ---- labelled figure grid ---------------------------------------------- */
+/* Rows are one image and its derivatives; columns share a label along the top
+   and rows along the left, so every panel is named once, not under each cell. */
+
+.matrix-scroll { margin: 20px 0 0; border-radius: 10px; }
+
+.matrix {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: 8px;
+    align-items: center;
+    min-width: calc(var(--cols) * var(--min-cell, 0px));
+}
+
+.matrix--labelled {
+    grid-template-columns: 24px repeat(var(--cols), minmax(0, 1fr));
+    min-width: calc(24px + var(--cols) * var(--min-cell, 0px));
+}
+
+.matrix-col,
+.matrix-row,
+.cell-label {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #9aa0a6;
+}
+
+.matrix-col { align-self: end; text-align: center; line-height: 1.3; padding-bottom: 2px; }
+
+/* Row labels run up the left edge so they take a column's width, not a row's. */
+.matrix-row {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    justify-self: center;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.cell img,
+.strip-item img,
+.stepper-variant img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.matrix .cell img { border-radius: 6px; }
+
+.cell .image-expand,
+.strip-item .image-expand,
+.stepper-variant .image-expand,
+.kernel .image-expand,
+.solo .image-expand { display: block; }
+
+.matrix--wide { grid-template-columns: 24px repeat(2, minmax(0, 1fr)); }
+
+.cell-label { display: block; margin-top: 8px; text-align: center; }
+
+/* A row of named images: inputs, or the stages of a single operation. */
+.strip {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+    margin: 20px 0 0;
+}
+
+.strip-item { margin: 0; min-width: 0; }
+.strip .frame--empty { aspect-ratio: 4 / 3; }
+
+.strip--narrow { max-width: 480px; margin-inline: auto; }
+.strip--natural { max-width: 560px; margin-inline: auto; align-items: end; }
+.strip--stack { grid-template-columns: 1fr; }
+.strip--pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.strip--square .strip-item img { aspect-ratio: 1; object-fit: cover; }
+
+.solo { margin: 24px auto 0; }
+.solo--narrow { max-width: 360px; }
+.solo--medium { max-width: 560px; margin-inline: auto; }
+.solo-img { display: block; width: 100%; height: auto; border-radius: 10px; }
+
+/* Kernels are a few cells wide and saved block-upscaled; draw them crisp. */
+.kernels {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 20px 36px;
+    margin: 28px 0 0;
+}
+
+.kernel { margin: 0; }
+.kernel-img {
+    display: block;
+    width: calc(var(--cells, 9) * var(--kernel-cell, 16px));
+    height: auto;
+    image-rendering: pixelated;
+    border-radius: 6px;
+}
+
+/* Parameters used for a figure, set as a capture-data strip under it. */
+.section p.params { margin: 14px 0 18px; }
+.exif b.placeholder { color: #b6bbc0; font-weight: 400; }
+
+.strip,
+.compare-expand,
+.matrix-scroll,
+.distance,
+.kernels { margin-bottom: 20px; }
+
+.table-note { font-size: 13px; color: #888; margin-top: 8px !important; }
+
+.section h3 {
+    font-size: 18px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 30px 0 8px;
+}
+
+@media (max-width: 760px) {
+    /* Long rows scroll sideways rather than orphan their last image. */
+    .strip--scroll { grid-template-columns: repeat(var(--cols), minmax(104px, 1fr)); overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 4px; }
+    .strip--quad { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .strip { gap: 10px; }
+    .kernels { --kernel-cell: 9px; gap: 16px 18px; }
+}
+
+/* ---- stepper ------------------------------------------------------------ */
+/* One frame and a row of parameter buttons; the variants share a grid cell so
+   switching never shifts the layout. */
+
+.stepper { margin: 22px 0 20px; }
+.stepper--narrow .stepper-stage,
+.stepper--narrow > .compare,
+.stepper--narrow > .compare-expand { max-width: 480px; margin-inline: auto; }
+
+.stepper-stage { display: grid; }
+.stepper-stage > .stepper-variant { grid-area: 1 / 1; min-width: 0; }
+.stepper-variant[hidden] { display: none; }
+
+.compare .stepper-variant { position: absolute; inset: 0; }
+
+.stepper-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 24px;
+    margin-top: 12px;
+}
+
+.stepper-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+.stepper-label {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #9aa0a6;
+    margin-right: 4px;
+    min-width: 1.5em;
+}
+
+.stepper .viewset-btn { font-variant-numeric: tabular-nums; }
+
+.no-js .stepper-controls { display: none; }
+.no-js .stepper-stage { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.no-js .stepper-stage > .stepper-variant { grid-area: auto; }
+.no-js .compare .stepper-variant { position: static; }
+
+/* ---- hybrid size control --------------------------------------------------- */
+/* The stage keeps the image's full-size box, so shrinking it leaves the page
+   still; only the picture recedes. */
+
+.distance { margin: 22px 0 0; }
+
+.distance-stage {
+    display: grid;
+    place-items: center;
+    width: min(100%, calc(560px * var(--ar)));
+    aspect-ratio: var(--ar);
+    margin-inline: auto;
+    background: #f8f9fa;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.distance-stage .image-expand { display: block; width: calc(var(--size) * 1%); }
+.distance-stage img { display: block; width: 100%; height: auto; border-radius: calc(var(--size) * 0.1px); }
+
+.distance-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 420px;
+    margin: 12px auto 0;
+    font-size: 13px;
+    color: #888;
+}
+
+.distance-label {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #9aa0a6;
+}
+
+.distance-range { flex: 1; accent-color: var(--accent); }
+.distance-out { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; color: #1a1a1a; }
+
+.no-js .distance-bar { display: none; }
+
+.compare--square { max-width: 480px; margin: 22px auto 0; }
+.compare-expand { max-width: 480px; margin-inline: auto; }
+.compare:not(.compare--square) + .compare-expand { max-width: none; }
+
+/* ---- code ------------------------------------------------------------------ */
+
+.code-fig { margin: 22px 0 0; }
+.code-fig .python-code { margin: 0; }
+
+.code-name {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+    color: #888;
+    margin: 0 0 8px;
+}
+
+.python-code .py-s1,
+.python-code .py-s2,
+.python-code .py-sa,
+.python-code .py-si { color: #BA2121 } /* String */
+.python-code .py-sd { color: #BA2121; font-style: italic } /* String.Doc */
+.python-code .py-kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.python-code .py-nn { color: #00F; font-weight: bold } /* Name.Namespace */
+
+/* Inline dimensions in prose: symbols in italic, and each bracketed size kept
+   on one line so an expression never breaks across a wrap. */
+.dim { white-space: nowrap; }
+.section p var { font-style: italic; font-family: inherit; }
+.section p var sub { font-size: 0.7em; font-style: italic; }
+
+/* A stepper whose variants are whole rows of images. */
+.stepper-variant > .strip { margin: 0; }
+.section p code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 0.88em;
+    padding: 1px 5px;
+    background: #f3f4f5;
+    border-radius: 4px;
+}
+
+/* The value the writeup settles on is marked apart from the one on screen:
+   an accent outline and dot, so it stays findable after the reader explores. */
+.stepper .viewset-btn.is-chosen { position: relative; border-color: var(--accent); }
+.stepper .viewset-btn.is-chosen.is-active { background: #eef4fe; }
+
+.stepper .viewset-btn.is-chosen::after,
+.stepper-key i {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.stepper .viewset-btn.is-chosen::after {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    box-shadow: 0 0 0 2px #fff;
+}
+
+.stepper-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #888;
+}
+
+.stepper-key i { display: block; }
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* ---- equation diagram ------------------------------------------------------ */
+/* A method written as arithmetic on images: terms are figures, operators sit
+   between them at the images' mid-height, and each term is named in notation. */
+
+.eqflow { margin: 8px 0 28px; }
+
+.eq-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 14px;
+}
+
+.eq-row + .eq-row { margin-top: 18px; }
+
+.eq-term { margin: 0; min-width: 0; }
+.eq-term img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.eq-term .image-expand { display: block; }
+
+/* Operators align with the images, not with the captions under them. */
+.eq-op {
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: #9aa0a6;
+    padding-bottom: 28px;
+}
+
+.eq-cap {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.eq-cap var,
+.eq-line var,
+.eq-key var { font-style: italic; font-family: inherit; padding-right: 0.1em; }
+
+.eq-divider { height: 1px; background: #e2e2e2; margin: 26px 0 22px; }
+
+.eq-line {
+    margin: 22px 0 0 !important;
+    text-align: center;
+    font-size: 17px;
+    color: #1a1a1a;
+}
+
+.eq-key {
+    margin: 10px 0 0 !important;
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Kernel surfaces: each kernel's shape as a fine wireframe, faces filled and
+   drawn back to front so the peak hides what is behind it. */
+.kplot {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #f8f9fa;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+}
+
+.kplot-axis { stroke: #cfd4d9; stroke-width: 1; }
+.kplot-grid { stroke: #dde1e5; stroke-width: 0.75; }
+.kplot-face { fill: #fff; stroke: #555; stroke-width: 0.35; stroke-linejoin: round; }
+.kplot-face--neg { fill: #e3edfd; stroke: var(--accent); }
+.kplot-stem { stroke: #333; stroke-width: 1.5; }
+.kplot-stem--neg { stroke: var(--accent); }
+.kplot-dot { fill: #333; }
+.kplot-dot--neg { fill: var(--accent); }
+.kplot-dot--zero { fill: #b6bbc0; }
+.kplot-gap { fill: #f8f9fa; }
+.kplot-break { stroke: #333; stroke-width: 1.2; fill: none; }
+
+
+
+@media (max-width: 560px) {
+    .eq-row { column-gap: 6px; }
+    .eq-op { font-size: 18px; padding-bottom: 24px; }
+    .eq-cap { font-size: 11px; }
+    .eq-line { font-size: 14px; }
+}
+
+/* ---- process flow ------------------------------------------------------------ */
+/* Stages left to right with the operation written on the arrow between them.
+   On phones the flow turns vertical so the operation labels keep their width. */
+
+.flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    margin-bottom: 24px;
+}
+
+.flow-term { margin: 0; min-width: 0; }
+.flow-term img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.flow-term .image-expand { display: block; }
+
+.flow-arrow {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 96px;
+    padding-bottom: 28px;
+}
+
+.flow-arrow-label {
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+    margin-bottom: 6px;
+}
+
+.flow-arrow-label var { font-style: italic; font-family: inherit; padding-right: 0.1em; }
+
+.flow-arrow-line {
+    position: relative;
+    order: 1;
+    display: block;
+    width: 100%;
+    height: 1.25px;
+    background: #a5abb2;
+}
+
+/* Chevron head drawn from two borders of a rotated square. */
+.flow-arrow-line::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-top: 1.25px solid #a5abb2;
+    border-right: 1.25px solid #a5abb2;
+    transform: translate(-1px, -50%) rotate(45deg);
+}
+
+@media (max-width: 560px) {
+    .flow { grid-template-columns: minmax(0, 1fr); row-gap: 6px; }
+    .flow-term { max-width: 260px; margin-inline: auto; width: 100%; }
+    .flow-arrow { flex-direction: row; justify-content: center; gap: 12px; min-width: 0; padding: 0; height: 44px; }
+    .flow-arrow-line { order: 0; width: 1.25px; height: 34px; }
+    .flow-arrow-line::after { right: auto; top: auto; left: 50%; bottom: 0; transform: translate(-50%, -1px) rotate(135deg); }
+    .flow-arrow-label { margin: 0; }
+}
+
+/* ---- three-way comparison ------------------------------------------------------ */
+
+.compare3 .layer-mid { clip-path: inset(0 0 0 var(--p1)); }
+.compare3 .layer-top { clip-path: inset(0 0 0 var(--p2)); }
+.compare3 .compare-divider--1 { left: var(--p1); }
+.compare3 .compare-divider--2 { left: var(--p2); }
+
+.compare-label--mid {
+    left: calc((var(--p1) + var(--p2)) / 2);
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+/* Both ranges cover the frame; only their thumbs catch the pointer. */
+.compare3 input[type="range"] { pointer-events: none; }
+.compare3 input[type="range"]::-webkit-slider-thumb { pointer-events: auto; }
+.compare3 input[type="range"]::-moz-range-thumb { pointer-events: auto; }
+
+.no-js .compare3 .layer-mid { clip-path: none; position: static; }
+
+/* ---- horizontal divider --------------------------------------------------------- */
+/* Top/bottom split, for pairs whose own seam is vertical. The range runs
+   vertically (min at the top), so drag, touch and arrow keys work as before. */
+
+.compare--horizontal .layer-top { clip-path: inset(var(--pos) 0 0 0); }
+
+.compare--horizontal .compare-divider {
+    top: var(--pos);
+    bottom: auto;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 2px;
+}
+
+.compare--horizontal .compare-label--a { top: 12px; bottom: auto; left: 12px; }
+.compare--horizontal .compare-label--b { bottom: 12px; left: 12px; right: auto; }
+
+.compare--horizontal input[type="range"] {
+    writing-mode: vertical-lr;
+    cursor: ns-resize;
+}
+
+.compare--horizontal input[type="range"]::-webkit-slider-thumb { width: 100%; height: 22px; cursor: ns-resize; }
+.compare--horizontal input[type="range"]::-moz-range-thumb { width: 100%; height: 22px; cursor: ns-resize; }
+
+/* ---- convolution walkthrough ------------------------------------------------ */
+/* The two implementations on the left, a small worked example on the right that
+   follows along; the line doing the work is highlighted in the code itself. */
+
+/* Wide screens: the code keeps the full column and the panel sits in the right
+   margin beside it. Narrower: the panel stacks above the code in one row. */
+.convo-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+    margin-top: 22px;
+}
+
+@media (min-width: 1440px) {
+    .convo-layout {
+        grid-template-columns: minmax(0, 1fr) 292px;
+        gap: 28px;
+        margin-right: calc(-292px - 28px);
+    }
+}
+
+.convo-code .code-fig:first-child { margin-top: 0; }
+
+.convo {
+    order: -1;
+    padding: 14px;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.convo-mode { display: flex; gap: 6px; margin-bottom: 12px; }
+
+/* Stacked: every grid on one row, mode and playback on either side of them. */
+.convo-grids {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 14px 26px;
+}
+
+@media (min-width: 1440px) {
+    .convo { order: 0; position: sticky; top: 24px; }
+    .convo-grids {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas: "k o" "p p";
+        gap: 12px 16px;
+    }
+    .convo-block--k { grid-area: k; }
+    .convo-block--o { grid-area: o; justify-self: end; }
+    .convo-block--p { grid-area: p; justify-self: center; }
+}
+
+
+.convo-name {
+    display: block;
+    margin-bottom: 5px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 11px;
+    color: #888;
+}
+
+.convo-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 26px);
+    gap: 2px;
+}
+
+.convo-block--o .convo-grid { grid-template-columns: repeat(var(--cols), 22px); }
+
+.convo-cell {
+    display: grid;
+    place-items: center;
+    height: 26px;
+    border-radius: 4px;
+    background: #f3f4f5;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: #333;
+    transition: background-color 80ms ease;
+}
+
+.convo-block--o .convo-cell { height: 22px; font-size: 10px; }
+
+.convo-cell.is-img { background: #e9ebee; color: #1a1a1a; font-weight: 600; }
+.convo-cell.is-pad { color: #b6bbc0; }
+.convo-cell.is-hidden { background: transparent; }
+.convo-cell.is-empty { background: #f8f9fa; }
+.convo-cell.is-window { background: #c9dcfc; color: #1a1a1a; }
+.convo-cell.is-tap { background: var(--accent); color: #fff; }
+.convo-cell.is-current { box-shadow: inset 0 0 0 2px var(--accent); background: #fff; }
+.convo-cell.is-cropped { opacity: 0.3; }
+.convo-cell.is-kept { box-shadow: inset 0 0 0 1px var(--accent); }
+
+.convo-readout {
+    margin: 12px 0 0 !important;
+    min-height: 2.6em;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #555;
+}
+
+.convo-readout code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; white-space: pre-wrap; }
+
+.convo-bar { display: flex; gap: 6px; margin-top: 10px; }
+.convo .player-toggle { padding: 6px 12px; }
+
+/* Code lines the walkthrough can point at. */
+.python-code .code-line { display: block; width: max-content; min-width: 100%; min-height: 1.65em; border-radius: 3px; }
+.python-code .code-line.is-exec { background: #dbe7fd; }
+.python-code .code-line.is-loop { background: #eef3fb; }
+
+.code-var {
+    margin-left: 12px;
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+}
+
+.no-js .convo { display: none; }
+.no-js .convo-layout { display: block; }
+
+@media (min-width: 761px) and (max-width: 1439px) {
+    .convo { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "mode mode" "grids grids" "readout bar"; align-items: center; column-gap: 16px; }
+    .convo-mode { grid-area: mode; }
+    .convo-grids { grid-area: grids; }
+    .convo-readout { grid-area: readout; margin: 12px 0 0 !important; }
+    .convo-bar { grid-area: bar; justify-self: end; margin-top: 12px; }
+}
+
+@media (max-width: 760px) {
+    .convo { max-width: 360px; margin-inline: auto; width: 100%; }
+}
+
+/* The two walkthrough blocks wrap instead of scrolling, so every line stays in
+   view next to the panel; continuations hang under the line they belong to. */
+.convo-code .python-code .code-line,
+.code-fig--wrap .python-code .code-line {
+    width: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding-left: 6ch;
+    text-indent: -6ch;
+}
+
+/* ---- hybrid construction diagram ---------------------------------------------- */
+/* Two branches (low-pass one image, high-pass the other) that meet at a sum. */
+
+.hybridflow { margin: 8px 0 30px; }
+
+.hf-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 64px minmax(0, 1fr);
+    grid-template-areas:
+        "a a2 lo join out"
+        "b b2 hi join out";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 18px;
+}
+
+.hf-term { margin: 0; min-width: 0; }
+.hf-term img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.hf-term .image-expand { display: block; }
+.hf-a { grid-area: a; } .hf-a2 { grid-area: a2; } .hf-lo { grid-area: lo; }
+.hf-b { grid-area: b; } .hf-b2 { grid-area: b2; } .hf-hi { grid-area: hi; }
+.hf-out { grid-area: out; }
+.hybridflow .flow-arrow { min-width: 84px; }
+
+.hf-join { grid-area: join; position: relative; align-self: stretch; }
+.hf-join svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hf-join path { fill: none; stroke: #a5abb2; stroke-width: 1.25; vector-effect: non-scaling-stroke; }
+
+.hf-plus {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 1.25px solid #a5abb2;
+    border-radius: 50%;
+    background: #fff;
+    color: #555;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.hf-join-out { position: absolute; left: calc(50% + 12px); right: 0; top: 48%; width: auto; }
+
+@media (max-width: 560px) {
+    .hf-grid {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-areas:
+            "a a2 lo"
+            "b b2 hi"
+            "join join join"
+            "out out out";
+        row-gap: 10px;
+    }
+    .hybridflow .flow-arrow { min-width: 0; }
+    .hybridflow .flow-arrow-label { font-size: 11px; }
+    .hf-join { height: 56px; }
+    .hf-join svg { display: none; }
+    .hf-plus { top: 14px; }
+    .hf-join-out { left: 50%; right: auto; top: 28px; width: 1.25px; height: 26px; }
+    .hf-join-out::after { right: auto; top: auto; left: 50%; bottom: 0; transform: translate(-50%, -1px) rotate(135deg); }
+    .hf-out { max-width: 200px; margin-inline: auto; width: 100%; }
+    /* Branch arrows stay horizontal here; only the merge turns vertical. */
+    .hybridflow .flow-arrow { flex-direction: column; height: auto; gap: 0; padding: 0 0 24px; }
+    .hybridflow .flow-arrow-line { order: 1; width: 34px; height: 1.25px; }
+    .hybridflow .flow-arrow-line::after { right: 0; left: auto; top: 50%; bottom: auto; transform: translate(-1px, -50%) rotate(45deg); }
+    .hybridflow .flow-arrow-label { margin: 0 0 4px; }
+    .hf-join .flow-arrow-line.hf-join-out { order: 0; left: 50%; right: auto; top: 28px; width: 1.25px; height: 26px; }
+    .hf-join .flow-arrow-line.hf-join-out::after { right: auto; top: auto; left: 50%; bottom: 0; transform: translate(-50%, -1px) rotate(135deg); }
+}
+
+/* "same" output region: a dashed box over the cells the crop keeps; the grid as
+   a whole is the "full" output. */
+.convo-grid[data-grid="o"] { position: relative; }
+
+.convo-same {
+    position: absolute;
+    top: calc(var(--r0) * (22px + 2px) - 3px);
+    left: calc(var(--c0) * (22px + 2px) - 3px);
+    width: calc(var(--cols) * 22px + (var(--cols) - 1) * 2px + 6px);
+    height: calc(var(--rows) * 22px + (var(--rows) - 1) * 2px + 6px);
+    border: 1.5px dashed var(--accent);
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.convo-key {
+    margin-left: 8px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 10px;
+    color: #9aa0a6;
+}
+
+.convo-key i {
+    display: inline-block;
+    width: 10px;
+    height: 8px;
+    margin: 0 3px -1px 6px;
+    border-radius: 2px;
+}
+
+.convo-key-full { background: #e9ebee; }
+.convo-key-same { border: 1.25px dashed var(--accent); }
+
+
+
+
+/* Explanatory diagrams sit narrower than the column so they read as figures
+   in the text rather than as results. */
+.eqflow { max-width: 600px; margin-inline: auto; }
+.hybridflow { max-width: 640px; margin-inline: auto; }
+
+/* ---- part divider ------------------------------------------------------------- */
+/* A rule between the two halves of a project, carrying any note that applies
+   to everything after it. */
+
+.part-break {
+    margin-top: 72px;
+    padding-top: 26px;
+    border-top: 1px solid #e2e2e2;
+}
+
+
+.part-break + .add-top-padding { padding-top: 48px; }
+.section p sub, .section p sup { font-size: 0.72em; line-height: 0; }
+.section p var sub { font-style: italic; }
+.section p math.inline-math { font-size: 1.05em; }
+
+/* ---- blending plan ------------------------------------------------------------- */
+/* Left: each input decomposed into stacks, drawn as tilted sheets (level 0 on
+   top). Right: what happens at one level, then the sum over levels. */
+
+.blendplan { margin: 8px 0 34px; }
+.bp-scroll { border-radius: 10px; }
+
+.bp-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: center;
+    min-width: 760px;
+}
+
+.bp-left { display: flex; flex-direction: column; gap: 6px; }
+.bp-row { display: flex; align-items: center; gap: 6px; }
+.bp-in { margin: 0; width: 74px; flex: none; }
+.blendplan img { display: block; width: 100%; height: auto; border-radius: 6px; }
+.blendplan .image-expand { display: block; }
+.blendplan .eq-cap { font-size: 12px; margin-top: 6px; overflow: visible; }
+.bp-mask img { outline: 1px solid #d5d8db; outline-offset: -1px; }
+.bp-arrow { min-width: 54px; flex: none; }
+.bp-row--center { justify-content: center; }
+
+
+/* Isometric stack: every sheet is the same square, rotated 45° and squashed,
+   stepped downward so the ones beneath show along the bottom edge. */
+.stack3d { margin: 0; flex: none; width: 128px; }
+.stack3d-body { position: relative; height: calc(66px + (var(--n) - 1) * 16px); }
+
+.sheet {
+    position: absolute;
+    left: 50%;
+    top: calc(33px + var(--i) * 16px);
+    width: 88px;
+    height: 88px;
+    margin: -44px 0 0 -44px;
+    transform: scaleY(0.52) rotate(45deg);
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 2px 5px rgba(0, 0, 0, 0.12);
+    background: #fff;
+}
+
+.sheet img { width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
+
+.bp-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding-left: 22px;
+    border-left: 1px solid #e2e2e2;
+}
+
+.bp-step { margin: 0 0 4px !important; font-size: 12px; color: #666; }
+.bp-prod { display: flex; align-items: center; gap: 8px; }
+.bp-small { margin: 0; width: 64px; }
+.bp-op { font-size: 18px; color: #9aa0a6; padding-bottom: 20px; }
+.bp-op--plus { padding: 0; line-height: 1; }
+.bp-down { height: 26px; display: flex; justify-content: center; }
+.bp-down .flow-arrow-line { width: 1.25px; height: 100%; }
+.bp-down .flow-arrow-line::after { right: auto; top: auto; left: 50%; bottom: 0; transform: translate(-50%, -1px) rotate(135deg); }
+.bp-down { position: relative; }
+/* The sum sits beside its arrow, off the axis, so the arrow stays centred. */
+.bp-sum-label { position: absolute; left: calc(50% + 10px); top: 50%; transform: translateY(-50%); color: #555; }
+
+.section math.inline-math, .eq-cap math, .flow-arrow-label math, .bp-step math { font-size: 1.05em; }
+
+@media (max-width: 560px) {
+    .blendplan .flow-arrow-line { width: 100%; height: 1.25px; }
+    .blendplan .flow-arrow-line::after { right: 0; left: auto; top: 50%; bottom: auto; transform: translate(-1px, -50%) rotate(45deg); }
+    .blendplan .flow-arrow { flex-direction: column; height: auto; padding: 0 0 24px; }
+    .blendplan .bp-down .flow-arrow-line { width: 1.25px; height: 100%; }
+    .blendplan .bp-down .flow-arrow-line::after { right: auto; top: auto; left: 50%; bottom: 0; transform: translate(-50%, -1px) rotate(135deg); }
+}
+
+/* The same stack turned 90°: sheets stand upright, one behind another. Each sheet's bottom edge runs down-right along the plane; each later
+   sheet sits one step further back (up-right), which gives the staircase. */
+.stack3d--h { width: auto; }
+.stack3d--h .stack3d-body { width: 150.0px; height: 167.4px; margin-inline: auto; }
+.stack3d--h .sheet {
+    left: calc(8px + var(--i) * 16px);
+    top: auto;
+    bottom: calc(34.3px + var(--i) * 7.804px);
+    width: 54px;
+    height: 86px;
+    margin: 0;
+    transform-origin: 0 100%;
+    transform: skewY(26deg);
+    border-radius: 3px;
+}
+
+.bp-key { margin: 14px 0 0 !important; text-align: center; font-size: 12px; color: #888; }
+
+/* ---- PDF-friendly view --------------------------------------------------------- */
+/* Toggled from the footer (and on print): every variant and every compared image
+   is laid out at once, and the controls that would hide them are removed. */
+
+.foot--three { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.foot--three > :last-child { justify-self: end; }
+.expand-toggle { font-size: 12px; }
+
+.expanded-only { display: none; }
+.expanded .expanded-only { display: block; }
+.expanded .interactive-only { display: none; }
+
+.variant-tag { display: none; }
+.expanded .variant-tag {
+    display: block;
+    margin-top: 6px;
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Steppers: all variants in a grid. */
+.expanded .stepper-controls,
+.expanded .stepper-key { display: none; }
+.expanded .stepper-stage { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 10px; }
+.expanded .stepper-stage > .stepper-variant { grid-area: auto; }
+.expanded .stepper-variant[hidden] { display: block; }
+
+/* Comparisons: one column per image, the slider's labels become captions. */
+.expanded .compare {
+    display: grid;
+    grid-template-columns: repeat(var(--cells, 2), minmax(0, 1fr));
+    column-gap: 10px;
+    row-gap: 6px;
+    aspect-ratio: auto !important;
+    max-width: none;
+    overflow: visible;
+    border-radius: 0;
+    background: none;
+}
+
+.expanded .compare > .layer,
+.expanded .compare .stepper-variant { position: static; clip-path: none; }
+.expanded .compare > .layer { grid-row: 1; }
+.expanded .compare > .layer-top { display: contents; }
+.expanded .compare .stepper-variant { grid-row: 1; }
+.expanded .compare .stepper-variant[hidden] { display: block; }
+.expanded .compare img { border-radius: 8px; height: auto; }
+.expanded .compare-divider,
+.expanded .compare input[type="range"],
+.expanded .compare-expand { display: none; }
+
+.expanded .compare-label {
+    position: static;
+    grid-row: 2;
+    transform: none;
+    background: none;
+    color: #555;
+    padding: 0;
+    font-size: 12px;
+    text-align: center;
+}
+
+.expanded .compare-label--a { grid-column: 1; }
+.expanded .compare3 .compare-label--mid { grid-column: 2; }
+.expanded .compare-label--b { grid-column: 2 / -1; }
+.expanded .compare3 .compare-label--b { grid-column: 3 / -1; }
+.expanded .stepper .compare .variant-tag { margin-top: 4px; }
+
+/* The evaluation flow already shows the original and blurred photos; its last
+   stage keeps α = 2 and the comparison below carries every α. */
+.expanded .flow .stepper-variant[hidden] { display: none; }
+.expanded .flow .variant-tag { display: none; }
+
+/* Other interactive pieces. */
+.expanded .distance-bar,
+.expanded .convo,
+.expanded .section-index { display: none; }
+.expanded .convo-layout { display: block; }
+.expanded .distance-stage img { border-radius: 10px; }
+
+@media print {
+    body { padding: 0; }
+    .foot .expand-toggle { display: none; }
+    figure, .strip, .matrix-scroll, .compare, .stepper, .eqflow, .hybridflow, .blendplan, .python-code, .data { break-inside: avoid; }
+    h1, h2, h3 { break-after: avoid; }
+    .scroll-x { overflow: visible; }
+}
+/* The code blocks read as plain code here: no walkthrough highlight or badges. */
+.expanded .python-code .code-line.is-exec,
+.expanded .python-code .code-line.is-loop { background: none; }
+.expanded .code-var { display: none; }
