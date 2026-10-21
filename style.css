@@ -2081,3 +2081,149 @@ td.placeholder { font-style: italic; }
 .expanded .python-code .code-line.is-exec,
 .expanded .python-code .code-line.is-loop { background: none; }
 .expanded .code-var { display: none; }
+
+/* ---- project 3 --------------------------------------------------------- */
+
+.part-names {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 24px;
+    margin: 18px 0 0;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 15px;
+    color: #929292;
+}
+
+/* Marks where each part begins, above the first section's heading. */
+.part-kicker {
+    order: -1;
+    margin: 0 0 6px !important;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #488af3;
+}
+.section:has(> .part-kicker) { display: flex; flex-direction: column; }
+.section:has(> .part-kicker) { border-top: 1px solid #e2e2e2; margin-top: 48px; padding-top: 48px; }
+
+.matrix-narrow { max-width: 520px; margin-inline: auto; }
+
+/* MNIST and CIFAR samples are tiny; scale them up without smoothing. */
+img.pixel { image-rendering: pixelated; }
+
+/* Seven noise levels, one label over each column of the noising strips. */
+.sigma-axis {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    margin: 16px 0 -16px;
+    text-align: center;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #9aa0a6;
+}
+.sigma-axis + .solo, .sigma-axis + .solo + .solo { margin-top: 20px; }
+
+/* Visual anagrams: the image turns over on hover or focus, and the caption
+   swaps to the prompt for that orientation. */
+.flip { margin: 0; outline: none; }
+.flip-frame { border-radius: 10px; }
+.flip:focus-visible .flip-frame { outline: 2px solid #488af3; outline-offset: 3px; }
+.flip img { display: block; width: 100%; height: auto; border-radius: 10px; transition: transform 0.7s ease; }
+.flip:hover img, .flip:focus-within img { transform: rotate(180deg); }
+.flip .flip-down { display: none; }
+.flip:hover .flip-up, .flip:focus-within .flip-up { display: none; }
+.flip:hover .flip-down, .flip:focus-within .flip-down { display: inline; }
+.rot180 img { transform: rotate(180deg); }
+
+/* Hybrids: full size beside a thumbnail that stands in for seeing it from afar. */
+.hybrid-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 72px;
+    max-width: 560px;
+    margin-inline: auto !important;
+    gap: 24px;
+    align-items: start;
+    margin: 20px 0;
+}
+.hybrid-far img { max-width: 100%; }
+.hybrid-tiny img { width: 48px; margin-inline: auto; border-radius: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .flip img { transition: none; }
+}
+
+@media (max-width: 760px) {
+    .p3 .strip[style*="--cols:4"], .p3 .strip[style*="--cols:5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .p3 .strip[style*="--cols:3"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media print {
+    .flip img { transform: none !important; }
+}
+
+/* Column labels over a sample grid, one per class. */
+.col-axis {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    margin: 0 0 6px;
+    text-align: center;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #9aa0a6;
+}
+.col-axis span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) {
+    .col-axis { font-size: 8px; letter-spacing: 0; }
+}
+
+.cfg-equation { margin: 20px 0 8px; text-align: center; }
+.cfg-equation .metric-definitions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 24px;
+    margin-top: 10px !important;
+    font-size: 13px;
+    color: #888;
+}
+
+/* CFG: the equation beside a to-scale vector sketch of it. */
+.cfg-explainer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    align-items: center;
+    gap: 16px 32px;
+    margin: 20px 0 24px;
+}
+.cfg-explainer .cfg-equation { margin: 0; }
+.cfg-diagram { margin: 0; }
+.cfg-diagram svg { display: block; width: 100%; height: auto; overflow: visible; }
+.cfg-diagram line { stroke-width: 2; stroke-linecap: round; }
+.cfg-diagram .vu { stroke: #b0b4b8; }
+.cfg-diagram .vc { stroke: #333; }
+.cfg-diagram .diff { stroke: #929292; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.cfg-diagram .ext { stroke: #488af3; stroke-width: 1.25; stroke-dasharray: 2 4; opacity: 0.55; }
+.cfg-diagram .cfg { stroke: #488af3; stroke-width: 2.5; }
+.cfg-diagram .ticks circle { fill: #488af3; opacity: 0.55; }
+.cfg-diagram .origin { fill: #333; }
+.cfg-diagram text { font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif; font-size: 14px; fill: #555; }
+.cfg-diagram .sym { font-family: 'Times New Roman', 'STIX Two Math', serif; font-style: italic; font-size: 17px; }
+.cfg-diagram .sub { font-size: 11px; }
+.cfg-diagram .lbl-u { fill: #9aa0a6; }
+.cfg-diagram .lbl-c { fill: #333; }
+.cfg-diagram .lbl-cfg { fill: #488af3; }
+.cfg-diagram .lbl-g { fill: #929292; font-size: 13px; }
+.cfg-diagram .lbl-note { fill: #aaa; font-size: 11px; letter-spacing: 0.02em; }
+
+@media (max-width: 760px) {
+    .cfg-explainer { grid-template-columns: minmax(0, 1fr); }
+    .cfg-diagram { max-width: 300px; margin-inline: auto; }
+}
+.cfg-explainer .metric-definitions { flex-direction: column; align-items: center; gap: 2px; }

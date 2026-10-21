@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fun with Flow Models — CS 180 Project 3 — Samarth Mahapatra</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="p3">
+
+<nav class="section-index" aria-label="Sections">
+<ul class="section-index-list">
+<li><a href="index.html" data-heading-level="1">← All projects</a></li>
+<li><a href="#overview" data-heading-level="1">Overview</a></li>
+<li><a href="#a-noise" data-heading-level="1">A · 1.1 Noisy inputs</a></li>
+<li><a href="#a-blur" data-heading-level="1">A · 1.2 Gaussian denoising</a></li>
+<li><a href="#a-onestep" data-heading-level="1">A · 1.3 One-step</a></li>
+<li><a href="#a-velocity" data-heading-level="1">A · 1.4 Velocity</a></li>
+<li><a href="#a-euler" data-heading-level="1">A · 1.5 Euler sampling</a></li>
+<li><a href="#a-sample" data-heading-level="1">A · 1.6 Sampling</a></li>
+<li><a href="#a-cfg" data-heading-level="1">A · 2.1 CFG</a></li>
+<li><a href="#a-edit" data-heading-level="1">A · 3.1 Image editing</a></li>
+<li><a href="#a-text" data-heading-level="1">A · 3.2 Text editing</a></li>
+<li><a href="#a-anagram" data-heading-level="1">A · 3.3 Anagrams</a></li>
+<li><a href="#a-hybrid" data-heading-level="1">A · 3.4 Hybrids</a></li>
+<li><a href="#b-denoise" data-heading-level="1">B · 1.2 Denoiser</a></li>
+<li><a href="#b-ood" data-heading-level="1">B · 1.2.2 Out of distribution</a></li>
+<li><a href="#b-pure" data-heading-level="1">B · 1.2.3 Pure noise</a></li>
+<li><a href="#b-time" data-heading-level="1">B · 2.2–2.3 Time-conditioned</a></li>
+<li><a href="#b-class" data-heading-level="1">B · 2.5–2.6 Class-conditioned</a></li>
+<li><a href="#b-nosched" data-heading-level="1">B · No scheduler</a></li>
+<li><a href="#b-bells" data-heading-level="1">B · Bells &amp; whistles</a></li>
+<li><a href="#learned" data-heading-level="1">Conclusion</a></li>
+</ul>
+</nav>
+
+<div class="container">
+
+<div class="section base-row title-row">
+<div class="base-col">
+<p class="kicker">CS 180 · Project 3</p>
+<h1 class="title">Fun with Flow Models</h1>
+<p class="part-names"><span>Part A: Exploring the Power of Flow Models</span><span>Part B: Flow Matching from Scratch!</span></p>
+<p class="meta-line meta-line--subtitle">
+<span class="author-text">Samarth Mahapatra</span>
+</p>
+<p class="image-viewing-note">All images can be clicked on to view them in full resolution</p>
+</div>
+</div>
+
+<div class="section add-top-padding" id="overview">
+<h1>Overview</h1>
+<p>This project explores going from random noise to a data distribution (in this case natural images) using a learned network. Specifically we look at flow matching which effectively tries to learn a velocity field from source noise to our desired data distribution which in this case is images.</p>
+</div>
+
+<div class="section add-top-padding" id="a-noise">
+<h1>Part A · 1.1 Constructing Noisy Training Inputs</h1>
+<p class="part-kicker">Part A: Exploring the Power of Flow Models</p>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_0.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_1.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_2.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_3.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.75</figcaption></figure>
+</div>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="a-blur">
+<h1>1.2 Classical Denoising</h1>
+<div class="matrix-narrow"><div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:2; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Noisy input</span>
+<span class="matrix-col">Gaussian blur</span>
+<span class="matrix-row">t = 0.25</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.25_0.jpg" data-fullres="assets/proj03/a/tiles/blur_0.25_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.25_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.25_1.png" alt="" loading="lazy"></div>
+<span class="matrix-row">t = 0.50</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.5_0.jpg" data-fullres="assets/proj03/a/tiles/blur_0.5_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.5_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.5_1.png" alt="" loading="lazy"></div>
+<span class="matrix-row">t = 0.75</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.75_0.jpg" data-fullres="assets/proj03/a/tiles/blur_0.75_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.75_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.75_1.png" alt="" loading="lazy"></div>
+</div></div></div>
+<p class="exif params"><span>Best σ at t = 0.25 <b class="placeholder">—</b></span><span>t = 0.50 <b class="placeholder">—</b></span><span>t = 0.75 <b class="placeholder">—</b></span></p>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="a-onestep">
+<h1>1.3 One-Step Denoising</h1>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:3; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Original</span>
+<span class="matrix-col">Noisy input</span>
+<span class="matrix-col">One-step estimate</span>
+<span class="matrix-row">t = 0.25</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.25_0.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.25_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.25_1.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.25_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.25_2.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.25_2.png" alt="" loading="lazy"></div>
+<span class="matrix-row">t = 0.50</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.5_0.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.5_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.5_1.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.5_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.5_2.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.5_2.png" alt="" loading="lazy"></div>
+<span class="matrix-row">t = 0.75</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.75_0.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.75_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.75_1.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.75_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.75_2.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.75_2.png" alt="" loading="lazy"></div>
+</div></div>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="a-velocity">
+<h1>1.4 Visualizing Velocity</h1>
+<figure class="solo solo--narrow" style="max-width:220px"><img src="assets/proj03/web/a--out--velocity_original.jpg" data-fullres="assets/proj03/a/out/velocity_original.png" alt="" loading="lazy" class="solo-img"><figcaption class="cell-label">Original</figcaption></figure>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:4; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Noisy x<sub>t</sub></span>
+<span class="matrix-col">Predicted (1−t)v̂<sub>t</sub></span>
+<span class="matrix-col">Ground truth (1−t)v<sub>gt</sub></span>
+<span class="matrix-col">Error (RGB RMS)</span>
+<span class="matrix-row">t = 0.25</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.25_0.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.25_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.25_1.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.25_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.25_2.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.25_2.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.25_3.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.25_3.png" alt="" loading="lazy"></div>
+<span class="matrix-row">t = 0.50</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.50_0.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.50_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.50_1.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.50_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.50_2.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.50_2.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.50_3.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.50_3.png" alt="" loading="lazy"></div>
+<span class="matrix-row">t = 0.75</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.75_0.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.75_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.75_1.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.75_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.75_2.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.75_2.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.75_3.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.75_3.png" alt="" loading="lazy"></div>
+</div></div>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="a-euler">
+<h1>1.5 Iterative Denoising with Euler Sampling</h1>
+<div class="strip " style="--cols:3">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_0.jpg" data-fullres="assets/proj03/a/tiles/trajectory_0.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_1.jpg" data-fullres="assets/proj03/a/tiles/trajectory_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.60</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_2.jpg" data-fullres="assets/proj03/a/tiles/trajectory_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.70</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_3.jpg" data-fullres="assets/proj03/a/tiles/trajectory_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.80</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_4.jpg" data-fullres="assets/proj03/a/tiles/trajectory_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.90</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_5.jpg" data-fullres="assets/proj03/a/tiles/trajectory_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 1.00</figcaption></figure>
+</div>
+<h2>Comparison</h2>
+<div class="strip " style="--cols:5">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--comparison_0.jpg" data-fullres="assets/proj03/a/tiles/comparison_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_2.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_2.png" alt="" loading="lazy"><figcaption class="cell-label">Noisy input · t = 0.50</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--comparison_1.jpg" data-fullres="assets/proj03/a/tiles/comparison_1.png" alt="" loading="lazy"><figcaption class="cell-label">Gaussian blur</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--comparison_2.jpg" data-fullres="assets/proj03/a/tiles/comparison_2.png" alt="" loading="lazy"><figcaption class="cell-label">One-step estimate</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--comparison_3.jpg" data-fullres="assets/proj03/a/tiles/comparison_3.png" alt="" loading="lazy"><figcaption class="cell-label">Euler denoising</figcaption></figure>
+</div>
+<table class="data"><thead><tr><th>Method</th><th>MSE vs. original</th></tr></thead><tbody><tr><td>Gaussian blur</td><td>0.0478</td></tr><tr><td>One-step</td><td>0.0267</td></tr><tr><td>Euler</td><td>0.0335</td></tr></tbody></table>
+<p class="table-note">All three start from the t = 0.50 noisy input. MSE is averaged over every pixel and RGB channel, with pixel values in [−1, 1].</p>
+<p>The Gaussian blur denoising method reduces the “noisiness” of the image but leaves artifacts of the noise as well as also destroying high-frequency details. Since the model generating velocities was trained with an L2-based objective, the one-step estimate approximates the mean, which averages over all plausible clean images and causes some smoothing, which discards some detail (notably the dark structures in the water). This also explains why the one-step estimate has a smaller MSE even though the iterative Euler-based denoising qualitatively looks much closer to the original image.</p>
+</div>
+
+<div class="section add-top-padding" id="a-sample">
+<h1>1.6 Generating Images from Noise</h1>
+<p class="exif params"><span>Prompt <b>“a high quality photo”</b></span></p>
+<div class="strip " style="--cols:5">
+<figure class="strip-item"><img src="assets/proj03/web/a--out--conditional_0.jpg" data-fullres="assets/proj03/a/out/conditional_0.png" alt="" loading="lazy"><figcaption class="cell-label">Sample 1</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--out--conditional_1.jpg" data-fullres="assets/proj03/a/out/conditional_1.png" alt="" loading="lazy"><figcaption class="cell-label">Sample 2</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--out--conditional_2.jpg" data-fullres="assets/proj03/a/out/conditional_2.png" alt="" loading="lazy"><figcaption class="cell-label">Sample 3</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--out--conditional_3.jpg" data-fullres="assets/proj03/a/out/conditional_3.png" alt="" loading="lazy"><figcaption class="cell-label">Sample 4</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--out--conditional_4.jpg" data-fullres="assets/proj03/a/out/conditional_4.png" alt="" loading="lazy"><figcaption class="cell-label">Sample 5</figcaption></figure>
+</div>
+<p>Using the prompt “a high quality photo” generates portrait-style images of people against plain backgrounds. Vanilla flow matching without classifier-free guidance produces images that are deformed/weird. Samples 1, 2, and 4 have strange artifacts, and samples 3 and 5 are more plausible generations but still have some structural issues.</p>
+</div>
+
+<div class="section add-top-padding" id="a-cfg">
+<h1>2.1 Classifier-Free Guidance</h1>
+<p>CFG helps with the quality of generations by artificially pushing the model’s predictions away from what it would predict without the prompt. At each sampling step, we first compute a conditional velocity <math class="inline-math"><msub><mi>v</mi><mi>c</mi></msub></math> (with the prompt) and an unconditional velocity <math class="inline-math"><msub><mi>v</mi><mi>u</mi></msub></math> (with the empty prompt), both at the same <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math> and <math class="inline-math"><mi>t</mi></math>. We then push the conditional velocity further away from the unconditional one by adding <math class="inline-math"><mi>w</mi></math> times their difference.</p>
+<div class="cfg-explainer">
+<div class="metric-equation cfg-equation" tabindex="0" role="region" aria-label="Classifier-free guidance equation">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+<semantics>
+<mrow><msub><mi>v</mi><mtext>cfg</mtext></msub><mo>=</mo><msub><mi>v</mi><mi>c</mi></msub><mo>+</mo><mi>w</mi><mo stretchy="false">(</mo><msub><mi>v</mi><mi>c</mi></msub><mo>−</mo><msub><mi>v</mi><mi>u</mi></msub><mo stretchy="false">)</mo></mrow>
+<annotation encoding="application/x-tex">v_\text{cfg} = v_c + w\,(v_c - v_u)</annotation>
+</semantics>
+</math>
+<p class="metric-definitions"><span><math class="inline-math"><msub><mi>v</mi><mi>c</mi></msub></math> velocity with the prompt</span><span><math class="inline-math"><msub><mi>v</mi><mi>u</mi></msub></math> velocity with the empty prompt “”</span><span><math class="inline-math"><mi>w</mi></math> = 7</span></p>
+</div>
+<figure class="cfg-diagram">
+<svg viewBox="0 0 340 262" role="img" aria-labelledby="cfg-diagram-title">
+<title id="cfg-diagram-title">Vector diagram of classifier-free guidance: from the noisy image, v_u and v_c point in nearly the same direction; v_cfg starts at the same point and ends at v_c plus seven times the difference v_c minus v_u.</title>
+<defs>
+<marker id="ah-u" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#b0b4b8"/></marker>
+<marker id="ah-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#333"/></marker>
+<marker id="ah-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#929292"/></marker>
+<marker id="ah-cfg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#488af3"/></marker>
+</defs>
+<line x1="195" y1="195" x2="300" y2="20" class="ext"/>
+<g class="ticks"><circle cx="210" cy="170" r="2.2"/><circle cx="225" cy="145" r="2.2"/><circle cx="240" cy="120" r="2.2"/><circle cx="255" cy="95" r="2.2"/><circle cx="270" cy="70" r="2.2"/><circle cx="285" cy="45" r="2.2"/></g>
+<line x1="30" y1="235" x2="300" y2="20" class="cfg" marker-end="url(#ah-cfg)"/>
+<line x1="30" y1="235" x2="180" y2="220" class="vu" marker-end="url(#ah-u)"/>
+<line x1="30" y1="235" x2="195" y2="195" class="vc" marker-end="url(#ah-c)"/>
+<line x1="180" y1="220" x2="195" y2="195" class="diff" marker-end="url(#ah-g)"/>
+<circle cx="30" cy="235" r="3.5" class="origin"/>
+<text x="30" y="256" text-anchor="middle"><tspan class="sym">x</tspan><tspan class="sub" dy="4">t</tspan></text>
+<text x="96" y="252" text-anchor="start" class="lbl-u"><tspan class="sym">v</tspan><tspan class="sub" dy="4">u</tspan></text>
+<text x="112" y="203" text-anchor="start" class="lbl-c"><tspan class="sym">v</tspan><tspan class="sub" dy="4">c</tspan></text>
+<text x="132" y="124" text-anchor="start" class="lbl-cfg"><tspan class="sym">v</tspan><tspan class="sub" dy="4">cfg</tspan></text>
+<text x="206" y="216" class="lbl-g"><tspan class="sym">v</tspan><tspan class="sub" dy="4">c</tspan><tspan dy="-4"> − </tspan><tspan class="sym">v</tspan><tspan class="sub" dy="4">u</tspan></text>
+<text x="252" y="126" class="lbl-g"><tspan class="sym">w</tspan><tspan>(</tspan><tspan class="sym">v</tspan><tspan class="sub" dy="4">c</tspan><tspan dy="-4"> − </tspan><tspan class="sym">v</tspan><tspan class="sub" dy="4">u</tspan><tspan dy="-4">)</tspan></text>
+<text x="252" y="142" class="lbl-note">w = 7, to scale</text>
+</svg>
+</figure>
+</div>
+<p class="exif params"><span>Prompt <b>“a high quality photo”</b></span></p>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:5; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Sample 1</span>
+<span class="matrix-col">Sample 2</span>
+<span class="matrix-col">Sample 3</span>
+<span class="matrix-col">Sample 4</span>
+<span class="matrix-col">Sample 5</span>
+<span class="matrix-row">No CFG</span>
+<div class="cell"><img src="assets/proj03/web/a--out--conditional_0.jpg" data-fullres="assets/proj03/a/out/conditional_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--conditional_1.jpg" data-fullres="assets/proj03/a/out/conditional_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--conditional_2.jpg" data-fullres="assets/proj03/a/out/conditional_2.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--conditional_3.jpg" data-fullres="assets/proj03/a/out/conditional_3.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--conditional_4.jpg" data-fullres="assets/proj03/a/out/conditional_4.png" alt="" loading="lazy"></div>
+<span class="matrix-row">CFG</span>
+<div class="cell"><img src="assets/proj03/web/a--out--cfg_0.jpg" data-fullres="assets/proj03/a/out/cfg_0.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--cfg_1.jpg" data-fullres="assets/proj03/a/out/cfg_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--cfg_2.jpg" data-fullres="assets/proj03/a/out/cfg_2.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--cfg_3.jpg" data-fullres="assets/proj03/a/out/cfg_3.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--out--cfg_4.jpg" data-fullres="assets/proj03/a/out/cfg_4.png" alt="" loading="lazy"></div>
+</div></div>
+<p>Using classifier-free guidance, we can significantly improve the quality of the generations, but we seem to suffer some mode collapse, as all of the images are even more homogeneous than before.</p>
+</div>
+
+<div class="section add-top-padding" id="a-edit">
+<h1>3.1 Image-to-Image Editing</h1>
+<p class="exif params"><span>Prompt <b>“a high quality photo”</b></span></p>
+<h2>Campanile</h2>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_0.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_1.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_2.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_3.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_4.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_5.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_6.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_7.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<h2 class="placeholder">Title.</h2>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_0.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_1.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_2.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_3.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_4.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_5.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_6.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_7.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<h2 class="placeholder">Title.</h2>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_0.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_1.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_2.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_3.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_4.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_5.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_6.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_7.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<p class="placeholder">Your analysis.</p>
+<h2>Web image</h2>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_0.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_1.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_2.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_3.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_4.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_5.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_6.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_7.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<h2>Hand-drawn</h2>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_0.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_1.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_2.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_3.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_4.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_5.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_6.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_7.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_0.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_1.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_2.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_3.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_4.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_5.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_6.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_7.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="a-text">
+<h1>3.2 Text-Guided Image Editing</h1>
+<h2>Campanile</h2>
+<p class="exif params"><span>Prompt <b>“eiffel tower”</b></span></p>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_0.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_1.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_2.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_3.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_4.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_5.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_6.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_7.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<h2 class="placeholder">Title.</h2>
+<p class="exif params"><span>Prompt <b>“van gogh painting of a waterfall”</b></span></p>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_0.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_1.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_2.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_3.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_4.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_5.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_6.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_7.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<h2 class="placeholder">Title.</h2>
+<p class="exif params"><span>Prompt <b>“venus fly trap”</b></span></p>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_0.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_1.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_2.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.04</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_3.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.06</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_4.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_4.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.10</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_5.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_5.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.14</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_6.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_7.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
+</div>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="a-anagram">
+<h1>3.3 Visual Anagrams</h1>
+<p class="table-note">Hover or focus an image to turn it upside down.</p>
+<div class="strip strip--pair"><figure class="flip" tabindex="0" aria-label="Visual anagram; hover or focus to rotate 180°"><div class="flip-frame"><img src="assets/proj03/web/a--out--anagram_0.jpg" data-fullres="assets/proj03/a/out/anagram_0.png" alt="" loading="lazy"></div><figcaption class="cell-label"><span class="flip-up">“an oil painting of a polar bear”</span><span class="flip-down">“an oil painting of snowy mountains”</span></figcaption></figure><figure class="flip" tabindex="0" aria-label="Visual anagram; hover or focus to rotate 180°"><div class="flip-frame"><img src="assets/proj03/web/a--out--anagram_1.jpg" data-fullres="assets/proj03/a/out/anagram_1.png" alt="" loading="lazy"></div><figcaption class="cell-label"><span class="flip-up">“a stained glass window of a rose”</span><span class="flip-down">“a stained glass window of a dancer in a red dress”</span></figcaption></figure></div>
+<h2>Both orientations</h2>
+<div class="strip " style="--cols:4">
+<figure class="strip-item"><img src="assets/proj03/web/a--out--anagram_0.jpg" data-fullres="assets/proj03/a/out/anagram_0.png" alt="" loading="lazy"><figcaption class="cell-label">“an oil painting of a polar bear”</figcaption></figure>
+<figure class="strip-item rot180"><img src="assets/proj03/web/a--out--anagram_0.jpg" data-fullres="assets/proj03/a/out/anagram_0.png" alt="" loading="lazy"><figcaption class="cell-label">“an oil painting of snowy mountains”</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj03/web/a--out--anagram_1.jpg" data-fullres="assets/proj03/a/out/anagram_1.png" alt="" loading="lazy"><figcaption class="cell-label">“a stained glass window of a rose”</figcaption></figure>
+<figure class="strip-item rot180"><img src="assets/proj03/web/a--out--anagram_1.jpg" data-fullres="assets/proj03/a/out/anagram_1.png" alt="" loading="lazy"><figcaption class="cell-label">“a stained glass window of a dancer in a red dress”</figcaption></figure>
+</div>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="a-hybrid">
+<h1>3.4 Hybrid Images</h1>
+<div class="hybrid-pair"><figure class="strip-item"><img src="assets/proj03/web/a--out--hybrid_0.jpg" data-fullres="assets/proj03/a/out/hybrid_0.png" alt="" loading="lazy"><figcaption class="cell-label">Close · “a dog”</figcaption></figure><figure class="strip-item hybrid-far"><img src="assets/proj03/web/a--derived--hybrid_0_far.jpg" data-fullres="assets/proj03/a/derived/hybrid_0_far.png" alt="" loading="lazy"><figcaption class="cell-label">Distant · “The Great Wave by Hokusai”</figcaption></figure><figure class="strip-item hybrid-tiny"><img src="assets/proj03/web/a--out--hybrid_0.jpg" data-fullres="assets/proj03/a/out/hybrid_0.png" alt="" loading="lazy"><figcaption class="cell-label">Small</figcaption></figure></div>
+<div class="hybrid-pair"><figure class="strip-item"><img src="assets/proj03/web/a--out--hybrid_1.jpg" data-fullres="assets/proj03/a/out/hybrid_1.png" alt="" loading="lazy"><figcaption class="cell-label">Close · “a moth&#x27;s wings”</figcaption></figure><figure class="strip-item hybrid-far"><img src="assets/proj03/web/a--derived--hybrid_1_far.jpg" data-fullres="assets/proj03/a/derived/hybrid_1_far.png" alt="" loading="lazy"><figcaption class="cell-label">Distant · “an owl face”</figcaption></figure><figure class="strip-item hybrid-tiny"><img src="assets/proj03/web/a--out--hybrid_1.jpg" data-fullres="assets/proj03/a/out/hybrid_1.png" alt="" loading="lazy"><figcaption class="cell-label">Small</figcaption></figure></div>
+<p class="table-note">The distant view is not a model output: the hybrid was downsampled to 32 × 32 px, keeping only its low frequencies, then upsampled back to 512 × 512 so it can be seen at full size. The small copy is the unaltered hybrid shown at 48 px.</p>
+<p class="exif params"><span>Low-pass σ <b>16</b></span></p>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="b-denoise">
+<h1>Part B · 1.2 Training a Single-Step Denoiser</h1>
+<p class="part-kicker">Part B: Flow Matching from Scratch!</p>
+<h2>Noising process</h2>
+<div class="sigma-axis"><span>σ = 0.0</span><span>σ = 0.2</span><span>σ = 0.4</span><span>σ = 0.5</span><span>σ = 0.6</span><span>σ = 0.8</span><span>σ = 1.0</span></div>
+<figure class="solo"><img src="assets/proj03/web/b--grids--noising_0.jpg" data-fullres="assets/proj03/b/grids/noising_0.png" alt="" loading="lazy" class="solo-img pixel"></figure>
+<figure class="solo"><img src="assets/proj03/web/b--grids--noising_5.jpg" data-fullres="assets/proj03/b/grids/noising_5.png" alt="" loading="lazy" class="solo-img pixel"></figure>
+<h2>Training loss (σ = 0.5)</h2>
+<figure class="solo solo--medium"><img src="assets/proj03/web/b--out--1.2.1_denoise_loss.jpg" data-fullres="assets/proj03/b/out/1.2.1_denoise_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<h2>Test-set results</h2>
+<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.1_denoise_epoch1.jpg" data-fullres="assets/proj03/b/grids/1.2.1_denoise_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.1_denoise_epoch5.jpg" data-fullres="assets/proj03/b/grids/1.2.1_denoise_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+<p class="table-note">Rows, top to bottom: clean, noisy (σ = 0.5), denoised.</p>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="b-ood">
+<h1>1.2.2 Out-of-Distribution Testing</h1>
+<div class="strip strip--pair"><figure class="strip-item"><img src="assets/proj03/web/b--grids--1.2.2_ood_noised.jpg" data-fullres="assets/proj03/b/grids/1.2.2_ood_noised.png" alt="" loading="lazy" class="pixel"><figcaption class="cell-label">Noisy input</figcaption></figure><figure class="strip-item"><img src="assets/proj03/web/b--grids--1.2.2_ood_denoised.jpg" data-fullres="assets/proj03/b/grids/1.2.2_ood_denoised.png" alt="" loading="lazy" class="pixel"><figcaption class="cell-label">Denoised</figcaption></figure></div>
+<p class="table-note">Rows, top to bottom: σ = 0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0.</p>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="b-pure">
+<h1>1.2.3 Denoising Pure Noise</h1>
+<figure class="solo solo--medium"><img src="assets/proj03/web/b--out--1.2.3_pure_noise_loss.jpg" data-fullres="assets/proj03/b/out/1.2.3_pure_noise_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.3_pure_noise_epoch1.jpg" data-fullres="assets/proj03/b/grids/1.2.3_pure_noise_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.3_pure_noise_epoch5.jpg" data-fullres="assets/proj03/b/grids/1.2.3_pure_noise_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="b-time">
+<h1>2.2–2.3 Time-Conditioned UNet</h1>
+<h2>Training loss</h2>
+<figure class="solo solo--medium"><img src="assets/proj03/web/b--out--2.2_time_fm_loss.jpg" data-fullres="assets/proj03/b/out/2.2_time_fm_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<h2>Samples</h2>
+<figure class="solo"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="solo"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+<figure class="solo"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="b-class">
+<h1>2.5–2.6 Class-Conditioned UNet</h1>
+<h2>Training loss</h2>
+<figure class="solo solo--medium"><img src="assets/proj03/web/b--out--2.5_class_fm_loss.jpg" data-fullres="assets/proj03/b/out/2.5_class_fm_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<h2>Samples</h2>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="b-nosched">
+<h1>Removing the Learning-Rate Scheduler</h1>
+<figure class="solo solo--medium"><img src="assets/proj03/web/b--out--2.5_class_fm_nosched_loss.jpg" data-fullres="assets/proj03/b/out/2.5_class_fm_nosched_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch15.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch15.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 15</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch20.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch20.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 20</figcaption></figure>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="b-bells">
+<h1>Bells &amp; Whistles · CIFAR-10</h1>
+<figure class="solo solo--medium"><img src="assets/proj03/web/b--out--cifar_fm_loss.jpg" data-fullres="assets/proj03/b/out/cifar_fm_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch25.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch25.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 25</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch50.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch50.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 50</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch75.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch75.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 75</figcaption></figure>
+<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch100.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch100.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 100</figcaption></figure>
+<p class="placeholder">Your analysis.</p>
+</div>
+
+<div class="section add-top-padding" id="learned">
+<h1>Conclusion</h1>
+<p class="placeholder">Conclusion.</p>
+</div>
+
+<footer class="foot">
+<a href="index.html">← All projects</a>
+<span>Samarth Mahapatra · CS 180</span>
+</footer>
+
+</div>
+
+<dialog class="image-viewer" aria-label="Full-resolution image">
+  <div class="image-viewer-bar">
+    <a class="image-viewer-original" target="_blank" rel="noopener">Open original ↗</a>
+    <button class="image-viewer-close" type="button" autofocus aria-label="Close image viewer">Close ×</button>
+  </div>
+  <div class="image-viewer-stage">
+    <img class="image-viewer-image" alt="">
+  </div>
+  <p class="image-viewer-status" role="status" aria-live="polite"></p>
+</dialog>
+
+<script>
+// Keep web-sized previews in the page; load the original only when opened.
+(function () {
+  var viewer = document.querySelector('.image-viewer');
+  var image = viewer.querySelector('.image-viewer-image');
+  var original = viewer.querySelector('.image-viewer-original');
+  var status = viewer.querySelector('.image-viewer-status');
+  var trigger;
+
+  // resolve() returns the image to open. Stepped comparisons swap which image
+  // is visible, so the source is looked up at click time.
+  function wire(link, resolve) {
+    var first = resolve();
+    link.setAttribute('href', first.dataset.fullres);
+    if (!link.textContent) link.setAttribute('aria-label', 'Expand image');
+    if (typeof viewer.showModal !== 'function') return;
+    link.setAttribute('aria-haspopup', 'dialog');
+    link.addEventListener('click', function (event) {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      var source = resolve();
+      trigger = link;
+      status.textContent = 'Loading full-resolution image…';
+      image.hidden = true;
+      image.alt = source.getAttribute('alt') || '';
+      image.onload = function () { image.hidden = false; status.textContent = ''; };
+      image.onerror = function () { status.textContent = 'Could not load this image. Try opening the original.'; };
+      original.href = source.dataset.fullres;
+      image.src = source.dataset.fullres;
+      viewer.showModal();
+      document.documentElement.classList.add('image-viewer-open');
+    });
+  }
+
+  document.querySelectorAll('img[data-fullres]').forEach(function (source) {
+    // The comparison range covers both layers; give each its own expand link.
+    if (source.closest('.compare')) return;
+    var link = document.createElement('a');
+    link.classList.add('image-expand');
+    source.parentNode.insertBefore(link, source);
+    link.appendChild(source);
+    wire(link, function () { return source; });
+  });
+
+  document.querySelectorAll('.compare').forEach(function (compare) {
+    var controls = document.createElement('div');
+    controls.className = 'compare-expand';
+    var labels = compare.querySelectorAll('.compare-label');
+    compare.querySelectorAll(':scope > .layer').forEach(function (layer, i) {
+      var link = document.createElement('a');
+      link.textContent = 'Expand ' + (labels[i] ? labels[i].textContent : 'image');
+      wire(link, function () {
+        var shown = layer.querySelector('.stepper-variant:not([hidden]) img[data-fullres]');
+        return shown || layer.querySelector('img[data-fullres]');
+      });
+      controls.appendChild(link);
+    });
+    compare.insertAdjacentElement('afterend', controls);
+  });
+
+  viewer.querySelector('.image-viewer-close').addEventListener('click', function () { viewer.close(); });
+  viewer.addEventListener('click', function (event) {
+    if (event.target === viewer || event.target === viewer.querySelector('.image-viewer-stage')) viewer.close();
+  });
+  viewer.addEventListener('close', function () {
+    document.documentElement.classList.remove('image-viewer-open');
+    image.onload = image.onerror = null;
+    image.removeAttribute('src');
+    if (trigger) trigger.focus({ preventScroll: true });
+  });
+})();
+
+// Highlight the section index entry for whatever is on screen.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.section-index a[href^="#"]'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.remove('is-active'); });
+      if (byId[e.target.id]) byId[e.target.id].classList.add('is-active');
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var s = document.getElementById(id);
+    if (s) obs.observe(s);
+  });
+})();
+</script>
+
+</body>
+</html>
