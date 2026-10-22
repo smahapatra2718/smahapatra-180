@@ -15,6 +15,7 @@
 <ul class="section-index-list">
 <li><a href="index.html" data-heading-level="1">← All projects</a></li>
 <li><a href="#overview" data-heading-level="1">Overview</a></li>
+<li class="index-part"><a href="#part-a" data-heading-level="1">Part A</a></li>
 <li><a href="#a-noise" data-heading-level="1">A · 1.1 Noisy inputs</a></li>
 <li><a href="#a-blur" data-heading-level="1">A · 1.2 Gaussian denoising</a></li>
 <li><a href="#a-onestep" data-heading-level="1">A · 1.3 One-step</a></li>
@@ -26,13 +27,21 @@
 <li><a href="#a-text" data-heading-level="1">A · 3.2 Text editing</a></li>
 <li><a href="#a-anagram" data-heading-level="1">A · 3.3 Anagrams</a></li>
 <li><a href="#a-hybrid" data-heading-level="1">A · 3.4 Hybrids</a></li>
+<li class="index-part"><a href="#part-b" data-heading-level="1">Part B</a></li>
+<li><a href="#b-unet" data-heading-level="1">B · 1.1 UNet</a></li>
 <li><a href="#b-denoise" data-heading-level="1">B · 1.2 Denoiser</a></li>
+<li><a href="#b-train" data-heading-level="1">B · 1.2.1 Training</a></li>
 <li><a href="#b-ood" data-heading-level="1">B · 1.2.2 Out of distribution</a></li>
 <li><a href="#b-pure" data-heading-level="1">B · 1.2.3 Pure noise</a></li>
-<li><a href="#b-time" data-heading-level="1">B · 2.2–2.3 Time-conditioned</a></li>
-<li><a href="#b-class" data-heading-level="1">B · 2.5–2.6 Class-conditioned</a></li>
+<li><a href="#b-tunet" data-heading-level="1">B · 2.1 Time conditioning</a></li>
+<li><a href="#b-train-fm" data-heading-level="1">B · 2.2 Training</a></li>
+<li><a href="#b-sample" data-heading-level="1">B · 2.3 Sampling</a></li>
+<li><a href="#b-cunet" data-heading-level="1">B · 2.4 Class conditioning</a></li>
+<li><a href="#b-class-train" data-heading-level="1">B · 2.5 Class training</a></li>
+<li><a href="#b-class-sample" data-heading-level="1">B · 2.6 Class sampling</a></li>
 <li><a href="#b-nosched" data-heading-level="1">B · No scheduler</a></li>
 <li><a href="#b-bells" data-heading-level="1">B · Bells &amp; whistles</a></li>
+<li><a href="#references" data-heading-level="1">References</a></li>
 <li><a href="#learned" data-heading-level="1">Conclusion</a></li>
 </ul>
 </nav>
@@ -52,44 +61,56 @@
 </div>
 
 <div class="section add-top-padding" id="overview">
-<h1>Overview</h1>
-<p>This project explores going from random noise to a data distribution (in this case natural images) using a learned network. Specifically we look at flow matching which effectively tries to learn a velocity field from source noise to our desired data distribution which in this case is images.</p>
+<h1 class="group-title">Overview</h1>
+<p>This project explores going from random noise to a data distribution (in this case natural images) using a learned network. Specifically I look at flow matching which effectively tries to learn a velocity field from source noise to my desired data distribution which in this case is images.</p>
 </div>
 
-<div class="section add-top-padding" id="a-noise">
-<h1>Part A · 1.1 Constructing Noisy Training Inputs</h1>
-<p class="part-kicker">Part A: Exploring the Power of Flow Models</p>
+<div class="section add-top-padding part-start" id="part-a">
+<h1 class="part-title"><span class="part-num">Part A:</span> Exploring the Power of Flow Models</h1>
+<h1 class="group-title" id="a-group-1">1. Visualizing Training and Sampling</h1>
+<p>I linearly interpolate between noise and data by sampling noise <math class="inline-math"><mi>ε</mi><mo>=</mo><msub><mi>x</mi><mn>0</mn></msub></math> from a zero-mean, unit-variance Gaussian, obtaining some clean image <math class="inline-math"><msub><mi>x</mi><mn>1</mn></msub></math>, and then constructing my linearly interpolated image <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math> as</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Linear interpolation between noise and data">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi>x</mi><mn>0</mn></msub><mo>+</mo><mi>t</mi><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">(1-t)\,x_0 + t\,x_1,</annotation></semantics></math>
+</div>
+<p class="continues">where <math class="inline-math"><mi>t</mi></math> is between 0 and 1. At train time, I sample a clean image, some noise, and <math class="inline-math"><mi>t</mi></math> from a uniform distribution and construct <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math>. The model is then conditioned on the constructed <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math>, sampled <math class="inline-math"><mi>t</mi></math>, and desired conditioning. The model is then tasked with predicting the velocity from noise to data (<math class="inline-math"><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub></math>) and is trained with the objective</p>
+<div class="metric-equation flow-loss" tabindex="0" role="region" aria-label="Flow matching training objective">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="normal">ℒ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="normal">𝔼</mi><mrow><mo>[</mo><msubsup><mrow><mo>‖</mo><msub><mi>v</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>c</mi><mo stretchy="false">)</mo><mo>−</mo><mo stretchy="false">(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub><mo stretchy="false">)</mo><mo>‖</mo></mrow><mn>2</mn><mn>2</mn></msubsup><mo>]</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal{L}(\theta) = \mathbb{E}\left[\lVert v_\theta(x_t, t, c) - (x_1 - x_0)\rVert_2^2\right]</annotation></semantics></math>
+</div>
+<h1 class="sub-after-intro" id="a-noise">1.1 Constructing Noisy Training Inputs</h1>
+<p>Here are some linearly interpolated images between noise and data.</p>
 <div class="strip " style="--cols:4">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_0.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_1.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_2.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_2.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--training_inputs_3.jpg" data-fullres="assets/proj03/a/tiles/training_inputs_3.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.75</figcaption></figure>
 </div>
-<p class="placeholder">Your analysis.</p>
+
 </div>
 
 <div class="section add-top-padding" id="a-blur">
 <h1>1.2 Classical Denoising</h1>
-<div class="matrix-narrow"><div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:2; --min-cell:110px">
+<p>Here I use vanilla Gaussian blur as a low-pass filter to remove the noise in my image (I don’t apply the blur directly on <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math> but rather on <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub><mo>/</mo><mi>t</mi></math> to preserve the amplitude).</p>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:3; --min-cell:110px">
 <span class="matrix-corner"></span>
-<span class="matrix-col">Noisy input</span>
-<span class="matrix-col">Gaussian blur</span>
-<span class="matrix-row">t = 0.25</span>
+<span class="matrix-col">t = 0.25</span>
+<span class="matrix-col">t = 0.50</span>
+<span class="matrix-col">t = 0.75</span>
+<span class="matrix-row">Noisy input</span>
 <div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.25_0.jpg" data-fullres="assets/proj03/a/tiles/blur_0.25_0.png" alt="" loading="lazy"></div>
-<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.25_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.25_1.png" alt="" loading="lazy"></div>
-<span class="matrix-row">t = 0.50</span>
 <div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.5_0.jpg" data-fullres="assets/proj03/a/tiles/blur_0.5_0.png" alt="" loading="lazy"></div>
-<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.5_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.5_1.png" alt="" loading="lazy"></div>
-<span class="matrix-row">t = 0.75</span>
 <div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.75_0.jpg" data-fullres="assets/proj03/a/tiles/blur_0.75_0.png" alt="" loading="lazy"></div>
+<span class="matrix-row">Gaussian blur</span>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.25_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.25_1.png" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.5_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.5_1.png" alt="" loading="lazy"></div>
 <div class="cell"><img src="assets/proj03/web/a--tiles--blur_0.75_1.jpg" data-fullres="assets/proj03/a/tiles/blur_0.75_1.png" alt="" loading="lazy"></div>
-</div></div></div>
-<p class="exif params"><span>Best σ at t = 0.25 <b class="placeholder">—</b></span><span>t = 0.50 <b class="placeholder">—</b></span><span>t = 0.75 <b class="placeholder">—</b></span></p>
-<p class="placeholder">Your analysis.</p>
+</div></div>
+<p class="exif params"><span>Best σ at t = 0.25 <b>8</b></span><span>t = 0.50 <b>4</b></span><span>t = 0.75 <b>1</b></span></p>
+
 </div>
 
 <div class="section add-top-padding" id="a-onestep">
 <h1>1.3 One-Step Denoising</h1>
+<p>Here I use a pretrained flow model to predict the velocity at varying <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math>’s and follow the path directly to <math class="inline-math"><msub><mi>x</mi><mn>1</mn></msub></math> along that predicted velocity in one step. Specifically, this is formulated as <math class="inline-math"><msub><mover><mi>x</mi><mo>^</mo></mover><mn>1</mn></msub><mo>=</mo><msub><mi>x</mi><mi>t</mi></msub><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi>v</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>c</mi><mo stretchy="false">)</mo></math>, where <math class="inline-math"><msub><mover><mi>x</mi><mo>^</mo></mover><mn>1</mn></msub></math> is the predicted one-step generation, <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math> is the interpolated noisy image, and then <math class="inline-math"><msub><mi>v</mi><mi>θ</mi></msub></math> is the model that outputs velocity.</p>
 <div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:3; --min-cell:110px">
 <span class="matrix-corner"></span>
 <span class="matrix-col">Original</span>
@@ -108,11 +129,12 @@
 <div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.75_1.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.75_1.png" alt="" loading="lazy"></div>
 <div class="cell"><img src="assets/proj03/web/a--tiles--one_step_0.75_2.jpg" data-fullres="assets/proj03/a/tiles/one_step_0.75_2.png" alt="" loading="lazy"></div>
 </div></div>
-<p class="placeholder">Your analysis.</p>
+
 </div>
 
 <div class="section add-top-padding" id="a-velocity">
 <h1>1.4 Visualizing Velocity</h1>
+<p>Here I visualize the predicted velocity the network outputs when tasked with denoising input images at varying noise levels. I show it as the update <math class="inline-math"><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mover><mi>v</mi><mo>^</mo></mover><mi>t</mi></msub></math> that the model adds to <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math> to estimate the clean image, next to the ground-truth update <math class="inline-math"><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi>v</mi><mtext>gt</mtext></msub></math>.</p>
 <figure class="solo solo--narrow" style="max-width:220px"><img src="assets/proj03/web/a--out--velocity_original.jpg" data-fullres="assets/proj03/a/out/velocity_original.png" alt="" loading="lazy" class="solo-img"><figcaption class="cell-label">Original</figcaption></figure>
 <div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:4; --min-cell:110px">
 <span class="matrix-corner"></span>
@@ -136,11 +158,16 @@
 <div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.75_2.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.75_2.png" alt="" loading="lazy"></div>
 <div class="cell"><img src="assets/proj03/web/a--tiles--velocity_0.75_3.jpg" data-fullres="assets/proj03/a/tiles/velocity_0.75_3.png" alt="" loading="lazy"></div>
 </div></div>
-<p class="placeholder">Your analysis.</p>
+<p>We can see from this result that the more input noise there is, the higher the error between the ground-truth velocity and the predicted velocity. Also, an interesting observation is that the noisier the image is, the more high-frequency details we lose.</p>
 </div>
 
 <div class="section add-top-padding" id="a-euler">
 <h1>1.5 Iterative Denoising with Euler Sampling</h1>
+<p>Instead of doing one-step denoising, I can predict the velocity at a point, move a small amount in that direction, and then predict the velocity at the slightly denoised image. I repeat this until <math class="inline-math"><mi>t</mi><mo>=</mo><mn>1</mn></math>. This process is called Euler integration and can be formulated as</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Euler update">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>x</mi><mrow><mi>t</mi><mo>+</mo><mi>h</mi></mrow></msub><mo>=</mo><msub><mi>x</mi><mi>t</mi></msub><mo>+</mo><mi>h</mi><msub><mi>v</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>c</mi><mo stretchy="false">)</mo><mo>.</mo></mrow><annotation encoding="application/x-tex">x_{t+h} = x_t + h\,v_\theta(x_t, t, c).</annotation></semantics></math>
+</div>
+<p class="continues">Compared to one-step denoising, where I multiply the velocity by <math class="inline-math"><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo></math>, I multiply by a fixed delta <math class="inline-math"><mi>h</mi></math>.</p>
 <div class="strip " style="--cols:3">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_0.jpg" data-fullres="assets/proj03/a/tiles/trajectory_0.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--trajectory_1.jpg" data-fullres="assets/proj03/a/tiles/trajectory_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.60</figcaption></figure>
@@ -164,7 +191,7 @@
 
 <div class="section add-top-padding" id="a-sample">
 <h1>1.6 Generating Images from Noise</h1>
-<p class="exif params"><span>Prompt <b>“a high quality photo”</b></span></p>
+<p class="exif params"><span>Prompt <b>“a high quality photo”</b></span><span>Input <b>Pure Gaussian noise</b></span></p>
 <div class="strip " style="--cols:5">
 <figure class="strip-item"><img src="assets/proj03/web/a--out--conditional_0.jpg" data-fullres="assets/proj03/a/out/conditional_0.png" alt="" loading="lazy"><figcaption class="cell-label">Sample 1</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--out--conditional_1.jpg" data-fullres="assets/proj03/a/out/conditional_1.png" alt="" loading="lazy"><figcaption class="cell-label">Sample 2</figcaption></figure>
@@ -176,8 +203,9 @@
 </div>
 
 <div class="section add-top-padding" id="a-cfg">
+<h1 class="group-title" id="a-group-2">2. Conditional Generation and Guidance</h1>
 <h1>2.1 Classifier-Free Guidance</h1>
-<p>CFG helps with the quality of generations by artificially pushing the model’s predictions away from what it would predict without the prompt. At each sampling step, we first compute a conditional velocity <math class="inline-math"><msub><mi>v</mi><mi>c</mi></msub></math> (with the prompt) and an unconditional velocity <math class="inline-math"><msub><mi>v</mi><mi>u</mi></msub></math> (with the empty prompt), both at the same <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math> and <math class="inline-math"><mi>t</mi></math>. We then push the conditional velocity further away from the unconditional one by adding <math class="inline-math"><mi>w</mi></math> times their difference.</p>
+<p>CFG helps with the quality of generations by artificially pushing the model’s predictions away from what it would predict without the prompt. At each sampling step, I first compute a conditional velocity <math class="inline-math"><msub><mi>v</mi><mi>c</mi></msub></math> (with the prompt) and an unconditional velocity <math class="inline-math"><msub><mi>v</mi><mi>u</mi></msub></math> (with the empty prompt), both at the same <math class="inline-math"><msub><mi>x</mi><mi>t</mi></msub></math> and <math class="inline-math"><mi>t</mi></math>. I then push the conditional velocity further away from the unconditional one by adding <math class="inline-math"><mi>w</mi></math> times their difference.</p>
 <div class="cfg-explainer">
 <div class="metric-equation cfg-equation" tabindex="0" role="region" aria-label="Classifier-free guidance equation">
 <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -190,7 +218,7 @@
 </div>
 <figure class="cfg-diagram">
 <svg viewBox="0 0 340 262" role="img" aria-labelledby="cfg-diagram-title">
-<title id="cfg-diagram-title">Vector diagram of classifier-free guidance: from the noisy image, v_u and v_c point in nearly the same direction; v_cfg starts at the same point and ends at v_c plus seven times the difference v_c minus v_u.</title>
+<title id="cfg-diagram-title">Schematic vector diagram of classifier-free guidance, angle exaggerated: from the noisy image, v_u and v_c point in nearly the same direction; v_cfg starts at the same point and ends at v_c plus seven times the difference v_c minus v_u.</title>
 <defs>
 <marker id="ah-u" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#b0b4b8"/></marker>
 <marker id="ah-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#333"/></marker>
@@ -210,7 +238,8 @@
 <text x="132" y="124" text-anchor="start" class="lbl-cfg"><tspan class="sym">v</tspan><tspan class="sub" dy="4">cfg</tspan></text>
 <text x="206" y="216" class="lbl-g"><tspan class="sym">v</tspan><tspan class="sub" dy="4">c</tspan><tspan dy="-4"> − </tspan><tspan class="sym">v</tspan><tspan class="sub" dy="4">u</tspan></text>
 <text x="252" y="126" class="lbl-g"><tspan class="sym">w</tspan><tspan>(</tspan><tspan class="sym">v</tspan><tspan class="sub" dy="4">c</tspan><tspan dy="-4"> − </tspan><tspan class="sym">v</tspan><tspan class="sub" dy="4">u</tspan><tspan dy="-4">)</tspan></text>
-<text x="252" y="142" class="lbl-note">w = 7, to scale</text>
+<text x="252" y="142" class="lbl-note">w = 7</text>
+<text x="252" y="156" class="lbl-note">angle exaggerated</text>
 </svg>
 </figure>
 </div>
@@ -239,7 +268,9 @@
 </div>
 
 <div class="section add-top-padding" id="a-edit">
+<h1 class="group-title" id="a-group-3">3. Creative Applications</h1>
 <h1>3.1 Image-to-Image Editing</h1>
+<p>I take an input image and noise it at varying levels, then I provide the model with the text conditioning “a high quality photo” and then run the Euler sampling process with classifier-free guidance (<math class="inline-math"><mi>w</mi><mo>=</mo><mn>7</mn></math>) to get a generation. Sampling starts at the noised image’s time <math class="inline-math"><mi>t</mi></math> rather than from pure noise and runs to <math class="inline-math"><mi>t</mi><mo>=</mo><mn>1</mn></math>, so each <math class="inline-math"><mi>t</mi></math> label below is that starting time; smaller <math class="inline-math"><mi>t</mi></math> means more noise.</p>
 <p class="exif params"><span>Prompt <b>“a high quality photo”</b></span></p>
 <h2>Campanile</h2>
 <div class="strip " style="--cols:4">
@@ -252,7 +283,7 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_6.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_campanile_7.jpg" data-fullres="assets/proj03/a/tiles/edit_campanile_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
-<h2 class="placeholder">Title.</h2>
+<h2>McWay Falls</h2>
 <div class="strip " style="--cols:4">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_0.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_1.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
@@ -263,7 +294,7 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_6.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_1_7.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_1_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
-<h2 class="placeholder">Title.</h2>
+<h2>A Succulent</h2>
 <div class="strip " style="--cols:4">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_0.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_1.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
@@ -274,8 +305,7 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_6.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_my_image_2_7.jpg" data-fullres="assets/proj03/a/tiles/edit_my_image_2_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
-<p class="placeholder">Your analysis.</p>
-<h2>Web image</h2>
+<h2>Tea Cup</h2>
 <div class="strip " style="--cols:4">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_0.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_1.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_1.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.02</figcaption></figure>
@@ -286,6 +316,7 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_6.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_web_image_7.jpg" data-fullres="assets/proj03/a/tiles/edit_web_image_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
+<p class="table-note">Original painting: Will Kemp Art School (<a href="https://www.willkempartschool.com/">willkempartschool.com</a>).</p>
 <h2>Hand-drawn</h2>
 <div class="strip " style="--cols:4">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_1_0.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_1_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
@@ -307,11 +338,11 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_6.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--edit_drawing_2_7.jpg" data-fullres="assets/proj03/a/tiles/edit_drawing_2_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
-<p class="placeholder">Your analysis.</p>
 </div>
 
 <div class="section add-top-padding" id="a-text">
 <h1>3.2 Text-Guided Image Editing</h1>
+<p>I do the same process as 3.1, but instead of using the generic prompt of “a high quality photo”, I use desired prompts to edit the source image.</p>
 <h2>Campanile</h2>
 <p class="exif params"><span>Prompt <b>“eiffel tower”</b></span></p>
 <div class="strip " style="--cols:4">
@@ -324,7 +355,7 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_6.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_campanile_7.jpg" data-fullres="assets/proj03/a/tiles/text_edit_campanile_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
-<h2 class="placeholder">Title.</h2>
+<h2>McWay Falls</h2>
 <p class="exif params"><span>Prompt <b>“van gogh painting of a waterfall”</b></span></p>
 <div class="strip " style="--cols:4">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_0.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
@@ -336,7 +367,7 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_6.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_1_7.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_1_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
-<h2 class="placeholder">Title.</h2>
+<h2>A Succulent</h2>
 <p class="exif params"><span>Prompt <b>“venus fly trap”</b></span></p>
 <div class="strip " style="--cols:4">
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_0.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_0.png" alt="" loading="lazy"><figcaption class="cell-label">Original</figcaption></figure>
@@ -348,11 +379,19 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_6.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_6.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.25</figcaption></figure>
 <figure class="strip-item"><img src="assets/proj03/web/a--tiles--text_edit_my_image_2_7.jpg" data-fullres="assets/proj03/a/tiles/text_edit_my_image_2_7.png" alt="" loading="lazy"><figcaption class="cell-label">t = 0.50</figcaption></figure>
 </div>
-<p class="placeholder">Your analysis.</p>
 </div>
 
 <div class="section add-top-padding" id="a-anagram">
 <h1>3.3 Visual Anagrams</h1>
+<p>I want to make generations that are anagrams. Right-side up, the image will reveal something, and then upside down, the image will reveal something else. To do this, I augment the velocity. I first compute two velocities <math class="inline-math"><msub><mi>v</mi><mn>1</mn></msub></math>, <math class="inline-math"><msub><mi>v</mi><mn>2</mn></msub></math> as</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Anagram velocities">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>v</mi><mn>1</mn></msub><mo>=</mo><mtext>CFG velocity</mtext><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><msub><mtext>prompt</mtext><mn>1</mn></msub><mo stretchy="false">)</mo></mrow></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>v</mi><mn>2</mn></msub><mo>=</mo><mtext>flip</mtext><mo stretchy="false">(</mo><mtext>CFG velocity</mtext><mo stretchy="false">(</mo><mtext>flip</mtext><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo stretchy="false">)</mo><mo>,</mo><mi>t</mi><mo>,</mo><msub><mtext>prompt</mtext><mn>2</mn></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math>
+</div>
+<p class="continues">and then the final velocity I use is calculated as</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Averaged anagram velocity">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>v</mi><mo>=</mo><mfrac><mrow><msub><mi>v</mi><mn>1</mn></msub><mo>+</mo><msub><mi>v</mi><mn>2</mn></msub></mrow><mn>2</mn></mfrac><mo>.</mo></mrow></math>
+</div>
 <p class="table-note">Hover or focus an image to turn it upside down.</p>
 <div class="strip strip--pair"><figure class="flip" tabindex="0" aria-label="Visual anagram; hover or focus to rotate 180°"><div class="flip-frame"><img src="assets/proj03/web/a--out--anagram_0.jpg" data-fullres="assets/proj03/a/out/anagram_0.png" alt="" loading="lazy"></div><figcaption class="cell-label"><span class="flip-up">“an oil painting of a polar bear”</span><span class="flip-down">“an oil painting of snowy mountains”</span></figcaption></figure><figure class="flip" tabindex="0" aria-label="Visual anagram; hover or focus to rotate 180°"><div class="flip-frame"><img src="assets/proj03/web/a--out--anagram_1.jpg" data-fullres="assets/proj03/a/out/anagram_1.png" alt="" loading="lazy"></div><figcaption class="cell-label"><span class="flip-up">“a stained glass window of a rose”</span><span class="flip-down">“a stained glass window of a dancer in a red dress”</span></figcaption></figure></div>
 <h2>Both orientations</h2>
@@ -362,97 +401,895 @@
 <figure class="strip-item"><img src="assets/proj03/web/a--out--anagram_1.jpg" data-fullres="assets/proj03/a/out/anagram_1.png" alt="" loading="lazy"><figcaption class="cell-label">“a stained glass window of a rose”</figcaption></figure>
 <figure class="strip-item rot180"><img src="assets/proj03/web/a--out--anagram_1.jpg" data-fullres="assets/proj03/a/out/anagram_1.png" alt="" loading="lazy"><figcaption class="cell-label">“a stained glass window of a dancer in a red dress”</figcaption></figure>
 </div>
-<p class="placeholder">Your analysis.</p>
 </div>
 
 <div class="section add-top-padding" id="a-hybrid">
 <h1>3.4 Hybrid Images</h1>
+<p>For generating hybrid images that look like one image up close and another image from far away, I employ a similar trick as the anagrams by modifying the velocity. Here I calculate velocities for each of my prompts, <math class="inline-math"><msub><mi>v</mi><mn>1</mn></msub></math> and <math class="inline-math"><msub><mi>v</mi><mn>2</mn></msub></math>, as</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Hybrid velocities">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>v</mi><mn>1</mn></msub><mo>=</mo><mtext>CFG velocity</mtext><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><msub><mtext>prompt</mtext><mn>1</mn></msub><mo stretchy="false">)</mo><mo>,</mo></mrow></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>v</mi><mn>2</mn></msub><mo>=</mo><mtext>CFG velocity</mtext><mo stretchy="false">(</mo><msub><mi>x</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><msub><mtext>prompt</mtext><mn>2</mn></msub><mo stretchy="false">)</mo><mo>.</mo></mrow></math>
+</div>
+<p class="continues">Then I pass <math class="inline-math"><msub><mi>v</mi><mn>1</mn></msub></math> through a low-pass filter (which will express <math class="inline-math"><msub><mi>v</mi><mn>1</mn></msub></math> when we are far away) and pass <math class="inline-math"><msub><mi>v</mi><mn>2</mn></msub></math> through a high-pass filter (which will express <math class="inline-math"><msub><mi>v</mi><mn>2</mn></msub></math> when we are close up). The final velocity is</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Hybrid velocity">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>v</mi><mo>=</mo><msub><mi>f</mi><mtext>lowpass</mtext></msub><mo stretchy="false">(</mo><msub><mi>v</mi><mn>1</mn></msub><mo stretchy="false">)</mo><mo>+</mo><msub><mi>f</mi><mtext>highpass</mtext></msub><mo stretchy="false">(</mo><msub><mi>v</mi><mn>2</mn></msub><mo stretchy="false">)</mo><mo>,</mo></mrow></math>
+</div>
+<p class="continues">where the filters are implemented as</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Low-pass and high-pass filters">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>f</mi><mtext>lowpass</mtext></msub><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo><mo>=</mo><mi>G</mi><mo>∗</mo><mi>v</mi><mo>,</mo></mrow></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>f</mi><mtext>highpass</mtext></msub><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo><mo>=</mo><mi>v</mi><mo>−</mo><msub><mi>f</mi><mtext>lowpass</mtext></msub><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo><mo>,</mo></mrow></math>
+</div>
 <div class="hybrid-pair"><figure class="strip-item"><img src="assets/proj03/web/a--out--hybrid_0.jpg" data-fullres="assets/proj03/a/out/hybrid_0.png" alt="" loading="lazy"><figcaption class="cell-label">Close · “a dog”</figcaption></figure><figure class="strip-item hybrid-far"><img src="assets/proj03/web/a--derived--hybrid_0_far.jpg" data-fullres="assets/proj03/a/derived/hybrid_0_far.png" alt="" loading="lazy"><figcaption class="cell-label">Distant · “The Great Wave by Hokusai”</figcaption></figure><figure class="strip-item hybrid-tiny"><img src="assets/proj03/web/a--out--hybrid_0.jpg" data-fullres="assets/proj03/a/out/hybrid_0.png" alt="" loading="lazy"><figcaption class="cell-label">Small</figcaption></figure></div>
 <div class="hybrid-pair"><figure class="strip-item"><img src="assets/proj03/web/a--out--hybrid_1.jpg" data-fullres="assets/proj03/a/out/hybrid_1.png" alt="" loading="lazy"><figcaption class="cell-label">Close · “a moth&#x27;s wings”</figcaption></figure><figure class="strip-item hybrid-far"><img src="assets/proj03/web/a--derived--hybrid_1_far.jpg" data-fullres="assets/proj03/a/derived/hybrid_1_far.png" alt="" loading="lazy"><figcaption class="cell-label">Distant · “an owl face”</figcaption></figure><figure class="strip-item hybrid-tiny"><img src="assets/proj03/web/a--out--hybrid_1.jpg" data-fullres="assets/proj03/a/out/hybrid_1.png" alt="" loading="lazy"><figcaption class="cell-label">Small</figcaption></figure></div>
 <p class="table-note">The distant view is not a model output: the hybrid was downsampled to 32 × 32 px, keeping only its low frequencies, then upsampled back to 512 × 512 so it can be seen at full size. The small copy is the unaltered hybrid shown at 48 px.</p>
 <p class="exif params"><span>Low-pass σ <b>16</b></span></p>
-<p class="placeholder">Your analysis.</p>
 </div>
 
-<div class="section add-top-padding" id="b-denoise">
-<h1>Part B · 1.2 Training a Single-Step Denoiser</h1>
-<p class="part-kicker">Part B: Flow Matching from Scratch!</p>
+<div class="section add-top-padding part-start" id="part-b">
+<h1 class="part-title"><span class="part-num">Part B:</span> Flow Matching from Scratch!</h1>
+<h1 class="group-title" id="b-group-1">1. Training a Single-Step Denoising UNet</h1>
+<h1 id="b-unet">1.1 Implementing the UNet</h1>
+<!-- unet-diagram:start -->
+<figure class="unet-fig">
+<div class="unet-scroll" tabindex="0" role="region" aria-label="Unconditional UNet used as the single-step denoiser">
+<svg class="unet-svg" viewBox="0 40 958 402" role="img" aria-labelledby="unet-title unet-desc">
+<title id="unet-title">Unconditional UNet used as the single-step denoiser</title>
+<desc id="unet-desc">A noisy 1×28×28 digit passes through ConvBlock to 128×28×28, DownBlock to 128×14×14, DownBlock to 256×7×7, Flatten to 256×1×1 and Unflatten back to 256×7×7. Each decoder level concatenates the matching encoder tensor, then UpBlocks return to 14×14 and 28×28, a ConvBlock gives 128×28×28 and a 3×3 convolution outputs the denoised 1×28×28 digit.</desc>
+<defs><marker id="unet-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#6b7178" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="unet-ah-skip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#9aa0a6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="unet-ah-cond" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#e5484d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="unet-ah-cls" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#b4359c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="unet-ah-emb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#c43c6c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><linearGradient id="unet-g-front" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6effe"/><stop offset="1" stop-color="#c3d6f8"/></linearGradient><linearGradient id="unet-g-top" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f4f8ff"/><stop offset="1" stop-color="#dde8fc"/></linearGradient><linearGradient id="unet-g-side" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a9c2f1"/><stop offset="1" stop-color="#86a8ea"/></linearGradient><linearGradient id="unet-g-sfront" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f2"/><stop offset="1" stop-color="#d9dde1"/></linearGradient><linearGradient id="unet-g-sside" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c9ced3"/><stop offset="1" stop-color="#b3b9bf"/></linearGradient><filter id="unet-shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#1a2b4a" flood-opacity="0.16"/></filter></defs>
+<path class="unet-skip" d="M168.0,94.2 V58.8 H684.2 V81.8" marker-end="url(#unet-ah-skip)"/>
+<path class="unet-skip" d="M259.7,224.2 V196.8 H578.8 V211.8" marker-end="url(#unet-ah-skip)"/>
+<path class="unet-skip" d="M334.6,310.8 V275.2 H490.2 V290.2" marker-end="url(#unet-ah-skip)"/>
+<g class="unet-t" filter="url(#unet-shadow)"><title>Noisy input z, 1×28×28</title>
+<polygon points="34.0,99.0 36.2,97.5 102.2,97.5 100.0,99.0" fill="#3a3a3a" stroke="#111"/>
+<polygon points="100.0,99.0 102.2,97.5 102.2,163.5 100.0,165.0" fill="#222" stroke="#111"/>
+<rect x="34.0" y="99.0" width="66.0" height="66.0" fill="#111" stroke="#111"/>
+<image href="assets/proj03/web/b--derived--unet_in.jpg" x="34.0" y="99.0" width="66" height="66" preserveAspectRatio="none" class="unet-img"/>
+<rect x="34.0" y="99.0" width="66" height="66" fill="none" stroke="#111"/>
+</g>
+<text class="unet-opname" x="68.1" y="183.0" text-anchor="middle" fill="#333333">Input</text>
+<text class="unet-dim" x="68.1" y="198.0" text-anchor="middle">1×28×28</text>
+<text class="unet-io" x="68.1" y="213.0" text-anchor="middle">noisy <tspan class="unet-sym">z</tspan></text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>ConvBlock output (skip 1), 128×28×28</title>
+<polygon points="128.2,99.0 141.8,89.5 207.8,89.5 194.2,99.0" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="194.2,99.0 207.8,89.5 207.8,155.5 194.2,165.0" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="128.2" y="99.0" width="66.0" height="66.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="168.0" y="183.0" text-anchor="middle" fill="#488af3">ConvB</text>
+<text class="unet-dim" x="168.0" y="198.0" text-anchor="middle">128×28×28</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>DownBlock output (skip 2), 128×14×14</title>
+<polygon points="233.8,229.0 247.5,219.5 285.5,219.5 271.8,229.0" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="271.8,229.0 285.5,219.5 285.5,257.5 271.8,267.0" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="233.8" y="229.0" width="38.0" height="38.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="259.7" y="285.0" text-anchor="middle" fill="#2a9d8f">DownB</text>
+<text class="unet-dim" x="259.7" y="300.0" text-anchor="middle">128×14×14</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>DownBlock output (skip 3), 256×7×7</title>
+<polygon points="311.5,319.5 336.7,302.0 357.7,302.0 332.5,319.5" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="332.5,319.5 357.7,302.0 357.7,323.0 332.5,340.5" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="311.5" y="319.5" width="21.0" height="21.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="334.6" y="358.5" text-anchor="middle" fill="#2a9d8f">DownB</text>
+<text class="unet-dim" x="334.6" y="373.5" text-anchor="middle">256×7×7</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>Flatten (average pool) output, 256×1×1</title>
+<polygon points="383.7,388.5 408.9,371.0 415.9,371.0 390.7,388.5" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="390.7,388.5 415.9,371.0 415.9,378.0 390.7,395.5" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="383.7" y="388.5" width="7.0" height="7.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="399.8" y="413.5" text-anchor="middle" fill="#d08a2c">Flatten</text>
+<text class="unet-dim" x="399.8" y="428.5" text-anchor="middle">256×1×1</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>Unflatten output 256×7×7, concatenated with skip 3 → 512×7×7</title>
+<polygon points="467.1,302.0 492.3,284.5 513.3,284.5 488.1,302.0" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="488.1,302.0 513.3,284.5 513.3,305.5 488.1,323.0" fill="url(#unet-g-sside)" stroke="#959ba1"/>
+<rect x="467.1" y="302.0" width="21.0" height="21.0" fill="url(#unet-g-sfront)" stroke="#959ba1"/>
+<polygon points="441.9,319.5 467.1,302.0 488.1,302.0 462.9,319.5" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="462.9,319.5 488.1,302.0 488.1,323.0 462.9,340.5" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="441.9" y="319.5" width="21.0" height="21.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="491.6" y="358.5" text-anchor="middle" fill="#c0612b">Unflatten ⊕ skip</text>
+<text class="unet-dim" x="491.6" y="373.5" text-anchor="middle">(256 + 256)×7×7</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>UpBlock output 128×14×14, concatenated with skip 2 → 256×14×14</title>
+<polygon points="553.0,219.5 566.7,210.0 604.7,210.0 591.0,219.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="591.0,219.5 604.7,210.0 604.7,248.0 591.0,257.5" fill="url(#unet-g-sside)" stroke="#959ba1"/>
+<rect x="553.0" y="219.5" width="38.0" height="38.0" fill="url(#unet-g-sfront)" stroke="#959ba1"/>
+<polygon points="539.3,229.0 553.0,219.5 591.0,219.5 577.3,229.0" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="577.3,229.0 591.0,219.5 591.0,257.5 577.3,267.0" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="539.3" y="229.0" width="38.0" height="38.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="582.0" y="285.0" text-anchor="middle" fill="#8b6cd9">UpB ⊕ skip</text>
+<text class="unet-dim" x="582.0" y="300.0" text-anchor="middle">(128 + 128)×14×14</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>UpBlock output 128×28×28, concatenated with skip 1 → 256×28×28</title>
+<polygon points="644.4,89.5 658.0,80.0 724.0,80.0 710.4,89.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="710.4,89.5 724.0,80.0 724.0,146.0 710.4,155.5" fill="url(#unet-g-sside)" stroke="#959ba1"/>
+<rect x="644.4" y="89.5" width="66.0" height="66.0" fill="url(#unet-g-sfront)" stroke="#959ba1"/>
+<polygon points="630.7,99.0 644.4,89.5 710.4,89.5 696.7,99.0" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="696.7,99.0 710.4,89.5 710.4,155.5 696.7,165.0" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="630.7" y="99.0" width="66.0" height="66.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="677.4" y="183.0" text-anchor="middle" fill="#8b6cd9">UpB ⊕ skip</text>
+<text class="unet-dim" x="677.4" y="198.0" text-anchor="middle">(128 + 128)×28×28</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>ConvBlock output, 128×28×28</title>
+<polygon points="750.0,99.0 763.7,89.5 829.7,89.5 816.0,99.0" fill="url(#unet-g-top)" stroke="#5f8de0"/>
+<polygon points="816.0,99.0 829.7,89.5 829.7,155.5 816.0,165.0" fill="url(#unet-g-side)" stroke="#5f8de0"/>
+<rect x="750.0" y="99.0" width="66.0" height="66.0" fill="url(#unet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="789.9" y="183.0" text-anchor="middle" fill="#488af3">ConvB</text>
+<text class="unet-dim" x="789.9" y="198.0" text-anchor="middle">128×28×28</text>
+<g class="unet-t" filter="url(#unet-shadow)"><title>Denoised output x̂, 1×28×28</title>
+<polygon points="855.7,99.0 857.9,97.5 923.9,97.5 921.7,99.0" fill="#3a3a3a" stroke="#111"/>
+<polygon points="921.7,99.0 923.9,97.5 923.9,163.5 921.7,165.0" fill="#222" stroke="#111"/>
+<rect x="855.7" y="99.0" width="66.0" height="66.0" fill="#111" stroke="#111"/>
+<image href="assets/proj03/web/b--derived--unet_out.jpg" x="855.7" y="99.0" width="66" height="66" preserveAspectRatio="none" class="unet-img"/>
+<rect x="855.7" y="99.0" width="66" height="66" fill="none" stroke="#111"/>
+</g>
+<text class="unet-opname" x="889.8" y="183.0" text-anchor="middle" fill="#333333">Conv 3×3</text>
+<text class="unet-dim" x="889.8" y="198.0" text-anchor="middle">1×28×28</text>
+<text class="unet-io" x="889.8" y="213.0" text-anchor="middle">denoised <tspan class="unet-sym">x̂</tspan></text>
+<path class="unet-op" d="M105.2,132.0 H125.2" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M210.8,132.0 H215.8 Q220.8,132.0 220.8,137.0 V243.0 Q220.8,248.0 225.8,248.0 H230.8" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M288.5,248.0 H293.5 Q298.5,248.0 298.5,253.0 V325.0 Q298.5,330.0 303.5,330.0 H308.5" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M360.7,330.0 H365.7 Q370.7,330.0 370.7,335.0 V387.0 Q370.7,392.0 375.7,392.0 H380.7" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M418.9,392.0 H423.9 Q428.9,392.0 428.9,387.0 V335.0 Q428.9,330.0 433.9,330.0 H438.9" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M516.3,330.0 H521.3 Q526.3,330.0 526.3,325.0 V253.0 Q526.3,248.0 531.3,248.0 H536.3" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M607.7,248.0 H612.7 Q617.7,248.0 617.7,243.0 V137.0 Q617.7,132.0 622.7,132.0 H627.7" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M727.0,132.0 H747.0" marker-end="url(#unet-ah)"/>
+<path class="unet-op" d="M832.7,132.0 H852.7" marker-end="url(#unet-ah)"/>
+</svg>
+</div>
+<dl class="unet-legend">
+<div><dt><span class="unet-swatch" style="--c:#488af3"></span>ConvB</dt><dd>ConvBlock: (Conv 3×3 → BatchNorm → GELU) × 2</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#2a9d8f"></span>DownB</dt><dd>DownBlock: Conv 3×3, stride 2 → BatchNorm → GELU → ConvB</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#8b6cd9"></span>UpB</dt><dd>UpBlock: ConvTranspose 4×4, stride 2 → BatchNorm → GELU → ConvB</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#d08a2c"></span>Flatten</dt><dd>AvgPool 7×7 → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#c0612b"></span>Unflatten</dt><dd>ConvTranspose 7×7, stride 7 → BatchNorm → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#333333"></span>Conv 3×3</dt><dd>Conv 3×3, 128 → 1 channel</dd></div>
+<div><dt><span class="unet-swatch unet-swatch--skip"></span>Skip</dt><dd>Copy the encoder tensor and concatenate along channels (grey slab)</dd></div>
+</dl>
+<p class="table-note">Front face: spatial size. Depth: channels. Hidden width D = 128; no time or class conditioning.</p>
+</figure>
+<!-- unet-diagram:end -->
+<h1 class="sub-after-intro" id="b-denoise">1.2 Training a Single-Step Denoiser</h1>
+<p>I aim to train a model <math class="inline-math"><msub><mi>D</mi><mi>θ</mi></msub></math> to go from a noised image <math class="inline-math"><mi>z</mi></math> to a clean image <math class="inline-math"><mi>x</mi></math>. My loss is</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Denoiser loss">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="normal">ℒ</mi><mo>=</mo><msub><mi mathvariant="normal">𝔼</mi><mrow><mi>z</mi><mo>,</mo><mi>x</mi></mrow></msub><mrow><mo>[</mo><msup><mrow><mo>‖</mo><msub><mi>D</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><mi>z</mi><mo stretchy="false">)</mo><mo>−</mo><mi>x</mi><mo>‖</mo></mrow><mn>2</mn></msup><mo>]</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal{L} = \mathbb{E}_{z,x}\left[\lVert D_\theta(z) - x\rVert^2\right]</annotation></semantics></math>
+</div>
+<p class="continues">To construct <math class="inline-math"><mi>z</mi></math>, I do</p>
+<div class="metric-equation flow-interp" tabindex="0" role="region" aria-label="Noising process">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>z</mi><mo>=</mo><mi>x</mi><mo>+</mo><mi>σ</mi><mi>ε</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">z = x + \sigma\epsilon,</annotation></semantics></math>
+</div>
+<p class="continues">where <math class="inline-math"><mi>ε</mi><mo>∼</mo><mi mathvariant="normal">𝒩</mi><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mi>I</mi><mo stretchy="false">)</mo></math>.</p>
 <h2>Noising process</h2>
 <div class="sigma-axis"><span>σ = 0.0</span><span>σ = 0.2</span><span>σ = 0.4</span><span>σ = 0.5</span><span>σ = 0.6</span><span>σ = 0.8</span><span>σ = 1.0</span></div>
 <figure class="solo"><img src="assets/proj03/web/b--grids--noising_0.jpg" data-fullres="assets/proj03/b/grids/noising_0.png" alt="" loading="lazy" class="solo-img pixel"></figure>
 <figure class="solo"><img src="assets/proj03/web/b--grids--noising_5.jpg" data-fullres="assets/proj03/b/grids/noising_5.png" alt="" loading="lazy" class="solo-img pixel"></figure>
+<h1 class="sub-after-intro" id="b-train">1.2.1 Training</h1>
+<p>I use the architecture described above to denoise MNIST digits. Below are results on unseen test digits at the first and last epoch.</p>
 <h2>Training loss (σ = 0.5)</h2>
 <figure class="solo solo--medium"><img src="assets/proj03/web/b--out--1.2.1_denoise_loss.jpg" data-fullres="assets/proj03/b/out/1.2.1_denoise_loss.png" alt="" loading="lazy" class="solo-img"></figure>
 <h2>Test-set results</h2>
-<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.1_denoise_epoch1.jpg" data-fullres="assets/proj03/b/grids/1.2.1_denoise_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
-<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.1_denoise_epoch5.jpg" data-fullres="assets/proj03/b/grids/1.2.1_denoise_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
-<p class="table-note">Rows, top to bottom: clean, noisy (σ = 0.5), denoised.</p>
-<p class="placeholder">Your analysis.</p>
+<div class="epochs">
+<div class="epochs-row" style="--cols:2">
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--1.2.1_denoise_epoch1.jpg" data-fullres="assets/proj03/b/grids/1.2.1_denoise_epoch1.png" alt="Epoch 1 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+</div>
+<figure class="epoch-final solo rows-labelled" style="--rows:3"><div class="rows-wrap"><div class="row-labels" aria-hidden="true"><span>Clean</span><span>Noisy, σ = 0.5</span><span>Denoised</span></div><img src="assets/proj03/web/b--grids--1.2.1_denoise_epoch5.jpg" data-fullres="assets/proj03/b/grids/1.2.1_denoise_epoch5.png" alt="Epoch 5 test digits; rows: clean, noisy at sigma 0.5, denoised" loading="lazy" class="solo-img pixel"></div><figcaption class="cell-label">Epoch 5</figcaption></figure>
+</div>
+<p>The first epoch is able to recover global structure of the digit with some residual noise, and then at the last epoch it resolves the fine details.</p>
 </div>
 
 <div class="section add-top-padding" id="b-ood">
 <h1>1.2.2 Out-of-Distribution Testing</h1>
+<p>I use the checkpoint from 1.2.1 and then test it on differing levels of noise (the network was only trained with <math class="inline-math"><mi>σ</mi><mo>=</mo><mn>0.5</mn></math>).</p>
 <div class="strip strip--pair"><figure class="strip-item"><img src="assets/proj03/web/b--grids--1.2.2_ood_noised.jpg" data-fullres="assets/proj03/b/grids/1.2.2_ood_noised.png" alt="" loading="lazy" class="pixel"><figcaption class="cell-label">Noisy input</figcaption></figure><figure class="strip-item"><img src="assets/proj03/web/b--grids--1.2.2_ood_denoised.jpg" data-fullres="assets/proj03/b/grids/1.2.2_ood_denoised.png" alt="" loading="lazy" class="pixel"><figcaption class="cell-label">Denoised</figcaption></figure></div>
 <p class="table-note">Rows, top to bottom: σ = 0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0.</p>
-<p class="placeholder">Your analysis.</p>
+<p>As you can see, the network is easily able to denoise images with less noise than 0.5 but struggles significantly with higher noise levels than 0.5.</p>
 </div>
 
 <div class="section add-top-padding" id="b-pure">
 <h1>1.2.3 Denoising Pure Noise</h1>
+<p>Here I am training the network to go from pure noise to some output class image. Since I am using an L2-based loss, the network is encouraged to essentially output the average image of all the classes, which is what we see in the generations.</p>
 <figure class="solo solo--medium"><img src="assets/proj03/web/b--out--1.2.3_pure_noise_loss.jpg" data-fullres="assets/proj03/b/out/1.2.3_pure_noise_loss.png" alt="" loading="lazy" class="solo-img"></figure>
-<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.3_pure_noise_epoch1.jpg" data-fullres="assets/proj03/b/grids/1.2.3_pure_noise_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
-<figure class="solo"><img src="assets/proj03/web/b--grids--1.2.3_pure_noise_epoch5.jpg" data-fullres="assets/proj03/b/grids/1.2.3_pure_noise_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
-<p class="placeholder">Your analysis.</p>
+<div class="epochs">
+<div class="epochs-row" style="--cols:2">
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--1.2.3_pure_noise_epoch1.jpg" data-fullres="assets/proj03/b/grids/1.2.3_pure_noise_epoch1.png" alt="Epoch 1 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+</div>
+<figure class="epoch-final solo"><img src="assets/proj03/web/b--grids--1.2.3_pure_noise_epoch5.jpg" data-fullres="assets/proj03/b/grids/1.2.3_pure_noise_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+</div>
+<p class="table-note">Rows, top to bottom: pure-noise input, denoised output.</p>
 </div>
 
 <div class="section add-top-padding" id="b-time">
-<h1>2.2–2.3 Time-Conditioned UNet</h1>
+<h1 class="group-title" id="b-group-2">2. Training a Flow Matching Model</h1>
+<h1 id="b-tunet">2.1 Adding Time Conditioning to UNet</h1>
+<p>I modify my original UNet architecture to condition on how noisy the noised image is with <math class="inline-math"><mi>t</mi></math>. The network uses fully connected blocks (FCBs) to map <math class="inline-math"><mi>t</mi></math> to one scale per channel: 1 → 128 for the 128×7×7 Unflatten output and 1 → 64 for the 64×14×14 output of the first UpBlock. Each is multiplied in before the skip connection is concatenated.</p>
+<!-- tunet-diagram:start -->
+<figure class="unet-fig">
+<div class="unet-scroll" tabindex="0" role="region" aria-label="Time-conditioned UNet for flow matching">
+<svg class="unet-svg" viewBox="0 48 960 394" role="img" aria-labelledby="tunet-title tunet-desc">
+<title id="tunet-title">Time-conditioned UNet for flow matching</title>
+<desc id="tunet-desc">The same UNet with hidden width 64: 1×28×28 input x_t through 64×28×28, 64×14×14, 128×7×7 and 128×1×1, then back up. The scalar time t passes through two FCBlocks, 1 → 128 and 1 → 64; their outputs multiply the Unflatten output (128×7×7) and the first UpBlock output (64×14×14) channel-wise. The network outputs the predicted flow u_θ(x_t, t), 1×28×28.</desc>
+<defs><marker id="tunet-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#6b7178" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="tunet-ah-skip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#9aa0a6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="tunet-ah-cond" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#e5484d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="tunet-ah-cls" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#b4359c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="tunet-ah-emb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#c43c6c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><linearGradient id="tunet-g-front" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6effe"/><stop offset="1" stop-color="#c3d6f8"/></linearGradient><linearGradient id="tunet-g-top" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f4f8ff"/><stop offset="1" stop-color="#dde8fc"/></linearGradient><linearGradient id="tunet-g-side" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a9c2f1"/><stop offset="1" stop-color="#86a8ea"/></linearGradient><linearGradient id="tunet-g-sfront" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f2"/><stop offset="1" stop-color="#d9dde1"/></linearGradient><linearGradient id="tunet-g-sside" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c9ced3"/><stop offset="1" stop-color="#b3b9bf"/></linearGradient><filter id="tunet-shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#1a2b4a" flood-opacity="0.16"/></filter></defs>
+<path class="unet-skip" d="M165.1,96.2 V64.8 H694.4 V87.8" marker-end="url(#tunet-ah-skip)"/>
+<path class="unet-skip" d="M251.0,226.2 V202.8 H600.6 V217.8" marker-end="url(#tunet-ah-skip)"/>
+<path class="unet-skip" d="M317.3,314.8 V287.2 H472.4 V302.2" marker-end="url(#tunet-ah-skip)"/>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>Noisy input x_t = (1 − t) x_0 + t x_1, 1×28×28</title>
+<polygon points="34.0,99.0 36.2,97.5 102.2,97.5 100.0,99.0" fill="#3a3a3a" stroke="#111"/>
+<polygon points="100.0,99.0 102.2,97.5 102.2,163.5 100.0,165.0" fill="#222" stroke="#111"/>
+<rect x="34.0" y="99.0" width="66.0" height="66.0" fill="#111" stroke="#111"/>
+<image href="assets/proj03/web/b--derived--tunet_in.jpg" x="34.0" y="99.0" width="66" height="66" preserveAspectRatio="none" class="unet-img"/>
+<rect x="34.0" y="99.0" width="66" height="66" fill="none" stroke="#111"/>
+</g>
+<text class="unet-opname" x="68.1" y="183.0" text-anchor="middle" fill="#333333">Input</text>
+<text class="unet-dim" x="68.1" y="198.0" text-anchor="middle">1×28×28</text>
+<text class="unet-io" x="68.1" y="213.0" text-anchor="middle">noisy <tspan class="unet-sym">x</tspan><tspan class="unet-sub" dy="4">t</tspan></text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>ConvBlock output (skip 1), 64×28×28</title>
+<polygon points="128.2,99.0 136.1,93.5 202.1,93.5 194.2,99.0" fill="url(#tunet-g-top)" stroke="#5f8de0"/>
+<polygon points="194.2,99.0 202.1,93.5 202.1,159.5 194.2,165.0" fill="url(#tunet-g-side)" stroke="#5f8de0"/>
+<rect x="128.2" y="99.0" width="66.0" height="66.0" fill="url(#tunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="165.1" y="183.0" text-anchor="middle" fill="#488af3">ConvB</text>
+<text class="unet-dim" x="165.1" y="198.0" text-anchor="middle">64×28×28</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>DownBlock output (skip 2), 64×14×14</title>
+<polygon points="228.1,229.0 236.0,223.5 274.0,223.5 266.1,229.0" fill="url(#tunet-g-top)" stroke="#5f8de0"/>
+<polygon points="266.1,229.0 274.0,223.5 274.0,261.5 266.1,267.0" fill="url(#tunet-g-side)" stroke="#5f8de0"/>
+<rect x="228.1" y="229.0" width="38.0" height="38.0" fill="url(#tunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="251.0" y="285.0" text-anchor="middle" fill="#2a9d8f">DownB</text>
+<text class="unet-dim" x="251.0" y="300.0" text-anchor="middle">64×14×14</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>DownBlock output (skip 3), 128×7×7</title>
+<polygon points="300.0,319.5 313.7,310.0 334.7,310.0 321.0,319.5" fill="url(#tunet-g-top)" stroke="#5f8de0"/>
+<polygon points="321.0,319.5 334.7,310.0 334.7,331.0 321.0,340.5" fill="url(#tunet-g-side)" stroke="#5f8de0"/>
+<rect x="300.0" y="319.5" width="21.0" height="21.0" fill="url(#tunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="317.3" y="358.5" text-anchor="middle" fill="#2a9d8f">DownB</text>
+<text class="unet-dim" x="317.3" y="373.5" text-anchor="middle">128×7×7</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>Flatten (average pool) output, 128×1×1</title>
+<polygon points="360.7,388.5 374.4,379.0 381.4,379.0 367.7,388.5" fill="url(#tunet-g-top)" stroke="#5f8de0"/>
+<polygon points="367.7,388.5 381.4,379.0 381.4,386.0 367.7,395.5" fill="url(#tunet-g-side)" stroke="#5f8de0"/>
+<rect x="360.7" y="388.5" width="7.0" height="7.0" fill="url(#tunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="371.0" y="413.5" text-anchor="middle" fill="#d08a2c">Flatten</text>
+<text class="unet-dim" x="371.0" y="428.5" text-anchor="middle">128×1×1</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>Unflatten output 128×7×7 multiplied by FCB(t), concatenated with skip 3 → 256×7×7</title>
+<polygon points="455.0,310.0 468.7,300.5 489.7,300.5 476.0,310.0" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="476.0,310.0 489.7,300.5 489.7,321.5 476.0,331.0" fill="url(#tunet-g-sside)" stroke="#959ba1"/>
+<rect x="455.0" y="310.0" width="21.0" height="21.0" fill="url(#tunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="441.4,319.5 455.0,310.0 476.0,310.0 462.4,319.5" fill="url(#tunet-g-top)" stroke="#e5484d"/>
+<polygon points="462.4,319.5 476.0,310.0 476.0,331.0 462.4,340.5" fill="url(#tunet-g-side)" stroke="#e5484d"/>
+<rect x="441.4" y="319.5" width="21.0" height="21.0" fill="url(#tunet-g-front)" stroke="#e5484d"/>
+</g>
+<text class="unet-opname" x="479.5" y="358.5" text-anchor="middle" fill="#c0612b">Unflatten ⊕ skip</text>
+<text class="unet-dim" x="479.5" y="373.5" text-anchor="middle">(<tspan class="unet-scaled" style="fill:#e5484d">128</tspan> + 128)×7×7</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>UpBlock output 64×14×14 multiplied by FCB(t), concatenated with skip 2 → 128×14×14</title>
+<polygon points="577.6,223.5 585.6,218.0 623.6,218.0 615.6,223.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="615.6,223.5 623.6,218.0 623.6,256.0 615.6,261.5" fill="url(#tunet-g-sside)" stroke="#959ba1"/>
+<rect x="577.6" y="223.5" width="38.0" height="38.0" fill="url(#tunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="569.7,229.0 577.6,223.5 615.6,223.5 607.7,229.0" fill="url(#tunet-g-top)" stroke="#e5484d"/>
+<polygon points="607.7,229.0 615.6,223.5 615.6,261.5 607.7,267.0" fill="url(#tunet-g-side)" stroke="#e5484d"/>
+<rect x="569.7" y="229.0" width="38.0" height="38.0" fill="url(#tunet-g-front)" stroke="#e5484d"/>
+</g>
+<text class="unet-opname" x="606.6" y="285.0" text-anchor="middle" fill="#8b6cd9">UpB ⊕ skip</text>
+<text class="unet-dim" x="606.6" y="300.0" text-anchor="middle">(<tspan class="unet-scaled" style="fill:#e5484d">64</tspan> + 64)×14×14</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>UpBlock output 64×28×28, concatenated with skip 1 → 128×28×28</title>
+<polygon points="657.5,93.5 665.4,88.0 731.4,88.0 723.5,93.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="723.5,93.5 731.4,88.0 731.4,154.0 723.5,159.5" fill="url(#tunet-g-sside)" stroke="#959ba1"/>
+<rect x="657.5" y="93.5" width="66.0" height="66.0" fill="url(#tunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="649.6,99.0 657.5,93.5 723.5,93.5 715.6,99.0" fill="url(#tunet-g-top)" stroke="#5f8de0"/>
+<polygon points="715.6,99.0 723.5,93.5 723.5,159.5 715.6,165.0" fill="url(#tunet-g-side)" stroke="#5f8de0"/>
+<rect x="649.6" y="99.0" width="66.0" height="66.0" fill="url(#tunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="690.5" y="183.0" text-anchor="middle" fill="#8b6cd9">UpB ⊕ skip</text>
+<text class="unet-dim" x="690.5" y="198.0" text-anchor="middle">(64 + 64)×28×28</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>ConvBlock output, 64×28×28</title>
+<polygon points="757.4,99.0 765.3,93.5 831.3,93.5 823.4,99.0" fill="url(#tunet-g-top)" stroke="#5f8de0"/>
+<polygon points="823.4,99.0 831.3,93.5 831.3,159.5 823.4,165.0" fill="url(#tunet-g-side)" stroke="#5f8de0"/>
+<rect x="757.4" y="99.0" width="66.0" height="66.0" fill="url(#tunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="794.4" y="183.0" text-anchor="middle" fill="#488af3">ConvB</text>
+<text class="unet-dim" x="794.4" y="198.0" text-anchor="middle">64×28×28</text>
+<g class="unet-t" filter="url(#tunet-shadow)"><title>Predicted flow u_θ(x_t, t), 1×28×28, trained against x_1 − x_0</title>
+<polygon points="857.3,99.0 859.5,97.5 925.5,97.5 923.3,99.0" fill="#5a6067" stroke="#22262a"/>
+<polygon points="923.3,99.0 925.5,97.5 925.5,163.5 923.3,165.0" fill="#2b2f34" stroke="#22262a"/>
+<rect x="857.3" y="99.0" width="66.0" height="66.0" fill="#3b4046" stroke="#22262a"/>
+</g>
+<text class="unet-opname" x="891.4" y="183.0" text-anchor="middle" fill="#333333">Conv 3×3</text>
+<text class="unet-dim" x="891.4" y="198.0" text-anchor="middle">1×28×28</text>
+<text class="unet-io" x="891.4" y="213.0" text-anchor="middle">flow <tspan class="unet-sym">u</tspan><tspan class="unet-sub" dy="4">θ</tspan></text>
+<path class="unet-op" d="M105.2,132.0 H125.2" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M205.1,132.0 H210.1 Q215.1,132.0 215.1,137.0 V243.0 Q215.1,248.0 220.1,248.0 H225.1" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M277.0,248.0 H282.0 Q287.0,248.0 287.0,253.0 V325.0 Q287.0,330.0 292.0,330.0 H297.0" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M337.7,330.0 H342.7 Q347.7,330.0 347.7,335.0 V387.0 Q347.7,392.0 352.7,392.0 H357.7" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M384.4,392.0 H387.4 Q393.4,392.0 393.4,386.0 V336.0 Q393.4,330.0 399.4,330.0 H438.4" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M492.7,330.0 H495.7 Q501.7,330.0 501.7,324.0 V254.0 Q501.7,248.0 507.7,248.0 H566.7" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M626.6,248.0 H631.6 Q636.6,248.0 636.6,243.0 V137.0 Q636.6,132.0 641.6,132.0 H646.6" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M734.4,132.0 H754.4" marker-end="url(#tunet-ah)"/>
+<path class="unet-op" d="M834.3,132.0 H854.3" marker-end="url(#tunet-ah)"/>
+<rect class="unet-cond-box" x="681.6" y="269.0" width="183.0" height="153.5" rx="10"/>
+<text class="unet-cond-title" x="693.6" y="286.0">Time conditioning</text>
+<path class="unet-cond-line" d="M820.6,352.8 H793.6"/>
+<path class="unet-cond-line" d="M793.6,316.0 V389.5"/>
+<path class="unet-cond-line" d="M793.6,389.5 H772.6" marker-end="url(#tunet-ah-cond)"/>
+<path class="unet-cond-line" d="M793.6,316.0 H772.6" marker-end="url(#tunet-ah-cond)"/>
+<circle class="unet-cond-node" cx="833.6" cy="352.8" r="13"/>
+<text class="unet-cond-t" x="833.6" y="357.8" text-anchor="middle"><tspan class="unet-sym">t</tspan></text>
+<path class="unet-cond-line" d="M695.6,389.5 H422.9 Q416.9,389.5 416.9,383.5 V341.0" marker-end="url(#tunet-ah-cond)"/>
+<rect class="unet-cond-fcb" x="695.6" y="372.5" width="74" height="34" rx="7"/>
+<text class="unet-cond-name" x="732.6" y="387.5" text-anchor="middle">FCB</text>
+<text class="unet-cond-dim" x="732.6" y="400.5" text-anchor="middle">1 → 128</text>
+<g class="unet-mul"><title>Multiply channel-wise by FCB(t), 128 channels</title><circle cx="416.9" cy="330.0" r="8"/><path d="M413.3,326.4 L420.5,333.6 M420.5,326.4 L413.3,333.6"/></g>
+<path class="unet-cond-line" d="M695.6,316.0 H541.2 Q535.2,316.0 535.2,310.0 V259.0" marker-end="url(#tunet-ah-cond)"/>
+<rect class="unet-cond-fcb" x="695.6" y="299.0" width="74" height="34" rx="7"/>
+<text class="unet-cond-name" x="732.6" y="314.0" text-anchor="middle">FCB</text>
+<text class="unet-cond-dim" x="732.6" y="327.0" text-anchor="middle">1 → 64</text>
+<g class="unet-mul"><title>Multiply channel-wise by FCB(t), 64 channels</title><circle cx="535.2" cy="248.0" r="8"/><path d="M531.6,244.4 L538.8,251.6 M538.8,244.4 L531.6,251.6"/></g>
+</svg>
+</div>
+<dl class="unet-legend">
+<div><dt><span class="unet-swatch" style="--c:#488af3"></span>ConvB</dt><dd>ConvBlock: (Conv 3×3 → BatchNorm → GELU) × 2</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#2a9d8f"></span>DownB</dt><dd>DownBlock: Conv 3×3, stride 2 → BatchNorm → GELU → ConvB</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#8b6cd9"></span>UpB</dt><dd>UpBlock: ConvTranspose 4×4, stride 2 → BatchNorm → GELU → ConvB</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#d08a2c"></span>Flatten</dt><dd>AvgPool 7×7 → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#c0612b"></span>Unflatten</dt><dd>ConvTranspose 7×7, stride 7 → BatchNorm → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#333333"></span>Conv 3×3</dt><dd>Conv 3×3, 64 → 1 channel</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#e5484d"></span>FCB</dt><dd>FCBlock: Linear(1 → C) → GELU → Linear(C → C)</dd></div>
+<div><dt><span class="unet-mul-swatch" aria-hidden="true">×</span>Multiply</dt><dd>Scale each channel of the red-outlined slab by the FCB output, broadcast over space, before the skip is concatenated</dd></div>
+<div><dt><span class="unet-swatch unet-swatch--skip"></span>Skip</dt><dd>Copy the encoder tensor and concatenate along channels (grey slab)</dd></div>
+</dl>
+<p class="table-note">Front face: spatial size. Depth: channels. Hidden width D = 64. Red: time conditioning, t ∈ [0, 1]. Input shown: a test digit mixed with noise at t = 0.5, for illustration; the output is a flow, not an image.</p>
+</figure>
+<!-- tunet-diagram:end -->
+<h1 class="sub-after-intro" id="b-train-fm">2.2 Training the UNet</h1>
+<figure class="algo" aria-label="Training algorithm">
+<figcaption class="algo-head">Training</figcaption>
+<ol class="algo-body">
+<li class="algo-l0"><b>repeat</b></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mn>1</mn></msub><mo>∼</mo></math> clean image from training set</li>
+<li class="algo-l1"><math class="inline-math"><mi>t</mi><mo>∼</mo><mtext>Uniform</mtext><mo stretchy="false">(</mo><mo stretchy="false">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false">]</mo><mo stretchy="false">)</mo></math></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo>∼</mo><mi mathvariant="normal">𝒩</mi><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mi>I</mi><mo stretchy="false">)</mo></math></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo>+</mo><mi>t</mi><msub><mi mathvariant="normal">𝐱</mi><mn>1</mn></msub></math></li>
+<li class="algo-l1">Take gradient descent step on<span class="algo-math"><math class="inline-math"><msub><mo>∇</mo><mi>θ</mi></msub><msup><mrow><mo>‖</mo><mo stretchy="false">(</mo><msub><mi mathvariant="normal">𝐱</mi><mn>1</mn></msub><mo>−</mo><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo stretchy="false">)</mo><mo>−</mo><msub><mi>u</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo stretchy="false">)</mo><mo>‖</mo></mrow><mn>2</mn></msup></math></span></li>
+<li class="algo-l0"><b>until</b> happy</li>
+</ol>
+</figure>
 <h2>Training loss</h2>
 <figure class="solo solo--medium"><img src="assets/proj03/web/b--out--2.2_time_fm_loss.jpg" data-fullres="assets/proj03/b/out/2.2_time_fm_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<h1 class="sub-after-intro" id="b-sample">2.3 Sampling from the UNet</h1>
+<figure class="algo" aria-label="Sampling algorithm">
+<figcaption class="algo-head">Sampling</figcaption>
+<ol class="algo-body">
+<li class="algo-l0"><b>input</b>: <math class="inline-math"><mi>T</mi></math> timesteps</li>
+<li class="algo-l0"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>=</mo><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo>∼</mo><mi mathvariant="normal">𝒩</mi><mo stretchy="false">(</mo><mi mathvariant="normal">𝟎</mi><mo>,</mo><mi mathvariant="normal">𝐈</mi><mo stretchy="false">)</mo></math></li>
+<li class="algo-l0"><b>for</b> <math class="inline-math"><mi>t</mi></math> from 0 to 1, step size <math class="inline-math"><mfrac><mn>1</mn><mi>T</mi></mfrac></math> <b>do</b></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>=</mo><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>+</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><msub><mi>u</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo stretchy="false">)</mo></math></li>
+<li class="algo-l0"><b>end for</b></li>
+<li class="algo-l0"><b>return</b> <math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub></math></li>
+</ol>
+</figure>
 <h2>Samples</h2>
-<figure class="solo"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
-<figure class="solo"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
-<figure class="solo"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
-<p class="placeholder">Your analysis.</p>
+<div class="epochs">
+<div class="epochs-row" style="--cols:2">
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch1.png" alt="Epoch 1 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch5.png" alt="Epoch 5 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+</div>
+<figure class="epoch-final solo"><img src="assets/proj03/web/b--grids--2.3_time_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.3_time_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+</div>
+<p>Conditioning on time initially is quite bad, but as you train for more epochs, the generations become more and more recognizable. The only problem here is that the output number is a function of the input noise, so there’s no way to control it, so I can introduce class conditioning to try and get the model to generate numbers I want regardless of the input noise.</p>
 </div>
 
 <div class="section add-top-padding" id="b-class">
-<h1>2.5–2.6 Class-Conditioned UNet</h1>
+<h1 id="b-cunet">2.4 Adding Class-Conditioning to UNet</h1>
+<p>I take the time-conditioned UNet and modify it to accept a one-hot encoded class vector of what single-digit number I want it to generate. At the same conditioning locations, instead of multiplying by the projected <math class="inline-math"><mi>t</mi></math> block, I multiply by the projected <math class="inline-math"><mi>c</mi></math> block and add the <math class="inline-math"><mi>t</mi></math> block.</p>
+<!-- cunet-diagram:start -->
+<figure class="unet-fig">
+<div class="unet-scroll" tabindex="0" role="region" aria-label="Class- and time-conditioned UNet for flow matching">
+<svg class="unet-svg" viewBox="0 48 996 406" role="img" aria-labelledby="cunet-title cunet-desc">
+<title id="cunet-title">Class- and time-conditioned UNet for flow matching</title>
+<desc id="cunet-desc">The time-conditioned UNet with a class input as well. The class c is a one-hot vector of length 10 and t a scalar; four FCBlocks embed them. At 7×7 the Unflatten output (128×7×7) is multiplied channel-wise by FCB_c(c) (10 → 128) and then FCB_t(t) (1 → 128) is added; at 14×14 the first UpBlock output (64×14×14) is treated the same way with 10 → 64 and 1 → 64. The output is the predicted flow u_θ(x_t, t, c).</desc>
+<defs><marker id="cunet-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#6b7178" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="cunet-ah-skip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#9aa0a6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="cunet-ah-cond" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#e5484d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="cunet-ah-cls" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#b4359c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="cunet-ah-emb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#c43c6c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><linearGradient id="cunet-g-front" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6effe"/><stop offset="1" stop-color="#c3d6f8"/></linearGradient><linearGradient id="cunet-g-top" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f4f8ff"/><stop offset="1" stop-color="#dde8fc"/></linearGradient><linearGradient id="cunet-g-side" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a9c2f1"/><stop offset="1" stop-color="#86a8ea"/></linearGradient><linearGradient id="cunet-g-sfront" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f2"/><stop offset="1" stop-color="#d9dde1"/></linearGradient><linearGradient id="cunet-g-sside" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c9ced3"/><stop offset="1" stop-color="#b3b9bf"/></linearGradient><filter id="cunet-shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#1a2b4a" flood-opacity="0.16"/></filter></defs>
+<path class="unet-skip" d="M165.1,96.2 V64.8 H730.4 V87.8" marker-end="url(#cunet-ah-skip)"/>
+<path class="unet-skip" d="M251.0,226.2 V202.8 H636.6 V217.8" marker-end="url(#cunet-ah-skip)"/>
+<path class="unet-skip" d="M317.3,314.8 V287.2 H490.4 V302.2" marker-end="url(#cunet-ah-skip)"/>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>Noisy input x_t = (1 − t) x_0 + t x_1, 1×28×28</title>
+<polygon points="34.0,99.0 36.2,97.5 102.2,97.5 100.0,99.0" fill="#3a3a3a" stroke="#111"/>
+<polygon points="100.0,99.0 102.2,97.5 102.2,163.5 100.0,165.0" fill="#222" stroke="#111"/>
+<rect x="34.0" y="99.0" width="66.0" height="66.0" fill="#111" stroke="#111"/>
+<image href="assets/proj03/web/b--derived--tunet_in.jpg" x="34.0" y="99.0" width="66" height="66" preserveAspectRatio="none" class="unet-img"/>
+<rect x="34.0" y="99.0" width="66" height="66" fill="none" stroke="#111"/>
+</g>
+<text class="unet-opname" x="68.1" y="183.0" text-anchor="middle" fill="#333333">Input</text>
+<text class="unet-dim" x="68.1" y="198.0" text-anchor="middle">1×28×28</text>
+<text class="unet-io" x="68.1" y="213.0" text-anchor="middle">noisy <tspan class="unet-sym">x</tspan><tspan class="unet-sub" dy="4">t</tspan></text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>ConvBlock output (skip 1), 64×28×28</title>
+<polygon points="128.2,99.0 136.1,93.5 202.1,93.5 194.2,99.0" fill="url(#cunet-g-top)" stroke="#5f8de0"/>
+<polygon points="194.2,99.0 202.1,93.5 202.1,159.5 194.2,165.0" fill="url(#cunet-g-side)" stroke="#5f8de0"/>
+<rect x="128.2" y="99.0" width="66.0" height="66.0" fill="url(#cunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="165.1" y="183.0" text-anchor="middle" fill="#488af3">ConvB</text>
+<text class="unet-dim" x="165.1" y="198.0" text-anchor="middle">64×28×28</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>DownBlock output (skip 2), 64×14×14</title>
+<polygon points="228.1,229.0 236.0,223.5 274.0,223.5 266.1,229.0" fill="url(#cunet-g-top)" stroke="#5f8de0"/>
+<polygon points="266.1,229.0 274.0,223.5 274.0,261.5 266.1,267.0" fill="url(#cunet-g-side)" stroke="#5f8de0"/>
+<rect x="228.1" y="229.0" width="38.0" height="38.0" fill="url(#cunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="251.0" y="285.0" text-anchor="middle" fill="#2a9d8f">DownB</text>
+<text class="unet-dim" x="251.0" y="300.0" text-anchor="middle">64×14×14</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>DownBlock output (skip 3), 128×7×7</title>
+<polygon points="300.0,319.5 313.7,310.0 334.7,310.0 321.0,319.5" fill="url(#cunet-g-top)" stroke="#5f8de0"/>
+<polygon points="321.0,319.5 334.7,310.0 334.7,331.0 321.0,340.5" fill="url(#cunet-g-side)" stroke="#5f8de0"/>
+<rect x="300.0" y="319.5" width="21.0" height="21.0" fill="url(#cunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="317.3" y="358.5" text-anchor="middle" fill="#2a9d8f">DownB</text>
+<text class="unet-dim" x="317.3" y="373.5" text-anchor="middle">128×7×7</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>Flatten (average pool) output, 128×1×1</title>
+<polygon points="360.7,388.5 374.4,379.0 381.4,379.0 367.7,388.5" fill="url(#cunet-g-top)" stroke="#5f8de0"/>
+<polygon points="367.7,388.5 381.4,379.0 381.4,386.0 367.7,395.5" fill="url(#cunet-g-side)" stroke="#5f8de0"/>
+<rect x="360.7" y="388.5" width="7.0" height="7.0" fill="url(#cunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="371.0" y="413.5" text-anchor="middle" fill="#d08a2c">Flatten</text>
+<text class="unet-dim" x="371.0" y="428.5" text-anchor="middle">128×1×1</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>Unflatten output 128×7×7 multiplied by FCB_c(c) plus FCB_t(t), concatenated with skip 3 → 256×7×7</title>
+<polygon points="473.0,310.0 486.7,300.5 507.7,300.5 494.0,310.0" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="494.0,310.0 507.7,300.5 507.7,321.5 494.0,331.0" fill="url(#cunet-g-sside)" stroke="#959ba1"/>
+<rect x="473.0" y="310.0" width="21.0" height="21.0" fill="url(#cunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="459.4,319.5 473.0,310.0 494.0,310.0 480.4,319.5" fill="url(#cunet-g-top)" stroke="#b4359c"/>
+<polygon points="480.4,319.5 494.0,310.0 494.0,331.0 480.4,340.5" fill="url(#cunet-g-side)" stroke="#b4359c"/>
+<rect x="459.4" y="319.5" width="21.0" height="21.0" fill="url(#cunet-g-front)" stroke="#b4359c"/>
+</g>
+<text class="unet-opname" x="497.5" y="358.5" text-anchor="middle" fill="#c0612b">Unflatten ⊕ skip</text>
+<text class="unet-dim" x="497.5" y="373.5" text-anchor="middle">(<tspan class="unet-scaled" style="fill:#b4359c">128</tspan> + 128)×7×7</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>UpBlock output 64×14×14 multiplied by FCB_c(c) plus FCB_t(t), concatenated with skip 2 → 128×14×14</title>
+<polygon points="613.6,223.5 621.6,218.0 659.6,218.0 651.6,223.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="651.6,223.5 659.6,218.0 659.6,256.0 651.6,261.5" fill="url(#cunet-g-sside)" stroke="#959ba1"/>
+<rect x="613.6" y="223.5" width="38.0" height="38.0" fill="url(#cunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="605.7,229.0 613.6,223.5 651.6,223.5 643.7,229.0" fill="url(#cunet-g-top)" stroke="#b4359c"/>
+<polygon points="643.7,229.0 651.6,223.5 651.6,261.5 643.7,267.0" fill="url(#cunet-g-side)" stroke="#b4359c"/>
+<rect x="605.7" y="229.0" width="38.0" height="38.0" fill="url(#cunet-g-front)" stroke="#b4359c"/>
+</g>
+<text class="unet-opname" x="642.6" y="285.0" text-anchor="middle" fill="#8b6cd9">UpB ⊕ skip</text>
+<text class="unet-dim" x="642.6" y="300.0" text-anchor="middle">(<tspan class="unet-scaled" style="fill:#b4359c">64</tspan> + 64)×14×14</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>UpBlock output 64×28×28, concatenated with skip 1 → 128×28×28</title>
+<polygon points="693.5,93.5 701.4,88.0 767.4,88.0 759.5,93.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="759.5,93.5 767.4,88.0 767.4,154.0 759.5,159.5" fill="url(#cunet-g-sside)" stroke="#959ba1"/>
+<rect x="693.5" y="93.5" width="66.0" height="66.0" fill="url(#cunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="685.6,99.0 693.5,93.5 759.5,93.5 751.6,99.0" fill="url(#cunet-g-top)" stroke="#5f8de0"/>
+<polygon points="751.6,99.0 759.5,93.5 759.5,159.5 751.6,165.0" fill="url(#cunet-g-side)" stroke="#5f8de0"/>
+<rect x="685.6" y="99.0" width="66.0" height="66.0" fill="url(#cunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="726.5" y="183.0" text-anchor="middle" fill="#8b6cd9">UpB ⊕ skip</text>
+<text class="unet-dim" x="726.5" y="198.0" text-anchor="middle">(64 + 64)×28×28</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>ConvBlock output, 64×28×28</title>
+<polygon points="793.4,99.0 801.3,93.5 867.3,93.5 859.4,99.0" fill="url(#cunet-g-top)" stroke="#5f8de0"/>
+<polygon points="859.4,99.0 867.3,93.5 867.3,159.5 859.4,165.0" fill="url(#cunet-g-side)" stroke="#5f8de0"/>
+<rect x="793.4" y="99.0" width="66.0" height="66.0" fill="url(#cunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="830.4" y="183.0" text-anchor="middle" fill="#488af3">ConvB</text>
+<text class="unet-dim" x="830.4" y="198.0" text-anchor="middle">64×28×28</text>
+<g class="unet-t" filter="url(#cunet-shadow)"><title>Predicted flow u_θ(x_t, t), 1×28×28, trained against x_1 − x_0</title>
+<polygon points="893.3,99.0 895.5,97.5 961.5,97.5 959.3,99.0" fill="#5a6067" stroke="#22262a"/>
+<polygon points="959.3,99.0 961.5,97.5 961.5,163.5 959.3,165.0" fill="#2b2f34" stroke="#22262a"/>
+<rect x="893.3" y="99.0" width="66.0" height="66.0" fill="#3b4046" stroke="#22262a"/>
+</g>
+<text class="unet-opname" x="927.4" y="183.0" text-anchor="middle" fill="#333333">Conv 3×3</text>
+<text class="unet-dim" x="927.4" y="198.0" text-anchor="middle">1×28×28</text>
+<text class="unet-io" x="927.4" y="213.0" text-anchor="middle">flow <tspan class="unet-sym">u</tspan><tspan class="unet-sub" dy="4">θ</tspan></text>
+<path class="unet-op" d="M105.2,132.0 H125.2" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M205.1,132.0 H210.1 Q215.1,132.0 215.1,137.0 V243.0 Q215.1,248.0 220.1,248.0 H225.1" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M277.0,248.0 H282.0 Q287.0,248.0 287.0,253.0 V325.0 Q287.0,330.0 292.0,330.0 H297.0" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M337.7,330.0 H342.7 Q347.7,330.0 347.7,335.0 V387.0 Q347.7,392.0 352.7,392.0 H357.7" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M384.4,392.0 H387.4 Q393.4,392.0 393.4,386.0 V336.0 Q393.4,330.0 399.4,330.0 H456.4" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M510.7,330.0 H513.7 Q519.7,330.0 519.7,324.0 V254.0 Q519.7,248.0 525.7,248.0 H602.7" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M662.6,248.0 H667.6 Q672.6,248.0 672.6,243.0 V137.0 Q672.6,132.0 677.6,132.0 H682.6" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M770.4,132.0 H790.4" marker-end="url(#cunet-ah)"/>
+<path class="unet-op" d="M870.3,132.0 H890.3" marker-end="url(#cunet-ah)"/>
+<rect class="unet-cond-box unet-cond-box--neutral" x="717.6" y="274.0" width="181.0" height="171.5" rx="10"/>
+<text class="unet-cond-title" x="729.6" y="291.0"><tspan fill="#b4359c">Class</tspan><tspan fill="#6b7178"> and </tspan><tspan fill="#e5484d">time</tspan><tspan fill="#6b7178"> conditioning</tspan></text>
+<path class="unet-cond-line" stroke="#b4359c" d="M731.6,419.5 H417.4 Q411.4,419.5 411.4,413.5 V341.0" marker-end="url(#cunet-ah-cls)"/>
+<path class="unet-cond-line" stroke="#b4359c" d="M860.6,419.5 H838.6" marker-end="url(#cunet-ah-cls)"/>
+<rect class="unet-cond-fcb" style="stroke:#b4359c; fill:#fdf3fa" x="731.6" y="407.5" width="104" height="24" rx="6"/>
+<text class="unet-cond-row" x="783.6" y="423.5" text-anchor="middle" fill="#b4359c"><tspan font-weight="700">FCB</tspan><tspan class="unet-sub" dy="3" fill="#b4359c">c</tspan><tspan dy="-3"> 10 → 128</tspan></text>
+<circle class="unet-cond-node" style="stroke:#b4359c" cx="871.6" cy="419.5" r="11"/>
+<text class="unet-cond-t" x="871.6" y="424.0" text-anchor="middle"><tspan class="unet-sym" fill="#b4359c">c</tspan></text>
+<g class="unet-mul" style="--node:#b4359c"><title>Multiply channel-wise by FCB_c(c), 128 channels</title><circle cx="411.4" cy="330.0" r="8" style="stroke:#b4359c"/><path d="M407.8,326.4 L415.0,333.6 M415.0,326.4 L407.8,333.6" style="stroke:#b4359c"/></g>
+<path class="unet-cond-line" stroke="#e5484d" d="M731.6,389.5 H441.4 Q435.4,389.5 435.4,383.5 V341.0" marker-end="url(#cunet-ah-cond)"/>
+<path class="unet-cond-line" stroke="#e5484d" d="M860.6,389.5 H838.6" marker-end="url(#cunet-ah-cond)"/>
+<rect class="unet-cond-fcb" style="stroke:#e5484d; fill:#fff5f5" x="731.6" y="377.5" width="104" height="24" rx="6"/>
+<text class="unet-cond-row" x="783.6" y="393.5" text-anchor="middle" fill="#e5484d"><tspan font-weight="700">FCB</tspan><tspan class="unet-sub" dy="3" fill="#e5484d">t</tspan><tspan dy="-3"> 1 → 128</tspan></text>
+<circle class="unet-cond-node" style="stroke:#e5484d" cx="871.6" cy="389.5" r="11"/>
+<text class="unet-cond-t" x="871.6" y="394.0" text-anchor="middle"><tspan class="unet-sym" fill="#e5484d">t</tspan></text>
+<g class="unet-mul" style="--node:#e5484d"><title>Add FCB_t(t) to each channel, 128 channels</title><circle cx="435.4" cy="330.0" r="8" style="stroke:#e5484d"/><path d="M431.0,330.0 H439.8 M435.4,325.6 V334.4" style="stroke:#e5484d"/></g>
+<path class="unet-cond-line" stroke="#b4359c" d="M731.6,346.0 H543.7 Q537.7,346.0 537.7,340.0 V259.0" marker-end="url(#cunet-ah-cls)"/>
+<path class="unet-cond-line" stroke="#b4359c" d="M860.6,346.0 H838.6" marker-end="url(#cunet-ah-cls)"/>
+<rect class="unet-cond-fcb" style="stroke:#b4359c; fill:#fdf3fa" x="731.6" y="334.0" width="104" height="24" rx="6"/>
+<text class="unet-cond-row" x="783.6" y="350.0" text-anchor="middle" fill="#b4359c"><tspan font-weight="700">FCB</tspan><tspan class="unet-sub" dy="3" fill="#b4359c">c</tspan><tspan dy="-3"> 10 → 64</tspan></text>
+<circle class="unet-cond-node" style="stroke:#b4359c" cx="871.6" cy="346.0" r="11"/>
+<text class="unet-cond-t" x="871.6" y="350.5" text-anchor="middle"><tspan class="unet-sym" fill="#b4359c">c</tspan></text>
+<g class="unet-mul" style="--node:#b4359c"><title>Multiply channel-wise by FCB_c(c), 64 channels</title><circle cx="537.7" cy="248.0" r="8" style="stroke:#b4359c"/><path d="M534.1,244.4 L541.3,251.6 M541.3,244.4 L534.1,251.6" style="stroke:#b4359c"/></g>
+<path class="unet-cond-line" stroke="#e5484d" d="M731.6,316.0 H567.7 Q561.7,316.0 561.7,310.0 V259.0" marker-end="url(#cunet-ah-cond)"/>
+<path class="unet-cond-line" stroke="#e5484d" d="M860.6,316.0 H838.6" marker-end="url(#cunet-ah-cond)"/>
+<rect class="unet-cond-fcb" style="stroke:#e5484d; fill:#fff5f5" x="731.6" y="304.0" width="104" height="24" rx="6"/>
+<text class="unet-cond-row" x="783.6" y="320.0" text-anchor="middle" fill="#e5484d"><tspan font-weight="700">FCB</tspan><tspan class="unet-sub" dy="3" fill="#e5484d">t</tspan><tspan dy="-3"> 1 → 64</tspan></text>
+<circle class="unet-cond-node" style="stroke:#e5484d" cx="871.6" cy="316.0" r="11"/>
+<text class="unet-cond-t" x="871.6" y="320.5" text-anchor="middle"><tspan class="unet-sym" fill="#e5484d">t</tspan></text>
+<g class="unet-mul" style="--node:#e5484d"><title>Add FCB_t(t) to each channel, 64 channels</title><circle cx="561.7" cy="248.0" r="8" style="stroke:#e5484d"/><path d="M557.3,248.0 H566.1 M561.7,243.6 V252.4" style="stroke:#e5484d"/></g>
+</svg>
+</div>
+<dl class="unet-legend">
+<div><dt><span class="unet-swatch" style="--c:#488af3"></span>ConvB</dt><dd>ConvBlock: (Conv 3×3 → BatchNorm → GELU) × 2</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#2a9d8f"></span>DownB</dt><dd>DownBlock: Conv 3×3, stride 2 → BatchNorm → GELU → ConvB</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#8b6cd9"></span>UpB</dt><dd>UpBlock: ConvTranspose 4×4, stride 2 → BatchNorm → GELU → ConvB</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#d08a2c"></span>Flatten</dt><dd>AvgPool 7×7 → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#c0612b"></span>Unflatten</dt><dd>ConvTranspose 7×7, stride 7 → BatchNorm → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#333333"></span>Conv 3×3</dt><dd>Conv 3×3, 64 → 1 channel</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#b4359c"></span>FCB<sub>c</sub></dt><dd>FCBlock on the one-hot class vector: Linear(10 → C) → GELU → Linear(C → C)</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#e5484d"></span>FCB<sub>t</sub></dt><dd>FCBlock on t: Linear(1 → C) → GELU → Linear(C → C)</dd></div>
+<div><dt><span class="unet-mul-swatch" style="border-color:#b4359c; color:#b4359c" aria-hidden="true">×</span>Multiply</dt><dd>Scale each channel of the outlined slab by FCB<sub>c</sub>(c)</dd></div>
+<div><dt><span class="unet-mul-swatch" style="border-color:#e5484d; color:#e5484d" aria-hidden="true">+</span>Add</dt><dd>Then add FCB<sub>t</sub>(t) to each channel, broadcast over space, before the skip is concatenated</dd></div>
+<div><dt><span class="unet-swatch unet-swatch--skip"></span>Skip</dt><dd>Copy the encoder tensor and concatenate along channels (grey slab)</dd></div>
+</dl>
+<p class="table-note">Front face: spatial size. Depth: channels. Hidden width D = 64. c: one-hot class vector, set to zero 10% of the time in training (p<sub>uncond</sub> = 0.1); t ∈ [0, 1]. Input shown: a test digit mixed with noise at t = 0.5, for illustration.</p>
+</figure>
+<!-- cunet-diagram:end -->
+<h1 class="sub-after-intro" id="b-class-train">2.5 Training the UNet</h1>
+<figure class="algo" aria-label="Training algorithm">
+<figcaption class="algo-head">Training</figcaption>
+<ol class="algo-body">
+<li class="algo-l0"><b>repeat</b></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mn>1</mn></msub><mo>,</mo><mi>c</mi><mo>∼</mo></math> clean image and label from training set</li>
+<li class="algo-l1">Make <math class="inline-math"><mi>c</mi></math> into a one-hot vector</li>
+<li class="algo-l1">with probability <math class="inline-math"><msub><mi>p</mi><mtext>uncond</mtext></msub></math> set <math class="inline-math"><mi>c</mi></math> to zero-vector.</li>
+<li class="algo-l1"><math class="inline-math"><mi>t</mi><mo>∼</mo><mtext>Uniform</mtext><mo stretchy="false">(</mo><mo stretchy="false">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false">]</mo><mo stretchy="false">)</mo></math></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo>∼</mo><mi mathvariant="normal">𝒩</mi><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mi>I</mi><mo stretchy="false">)</mo></math></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo>+</mo><mi>t</mi><msub><mi mathvariant="normal">𝐱</mi><mn>1</mn></msub></math></li>
+<li class="algo-l1">Take gradient descent step on<span class="algo-math"><math class="inline-math"><msub><mo>∇</mo><mi>θ</mi></msub><msup><mrow><mo>‖</mo><mo stretchy="false">(</mo><msub><mi mathvariant="normal">𝐱</mi><mn>1</mn></msub><mo>−</mo><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo stretchy="false">)</mo><mo>−</mo><msub><mi>u</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>c</mi><mo stretchy="false">)</mo><mo>‖</mo></mrow><mn>2</mn></msup></math></span></li>
+<li class="algo-l0"><b>until</b> happy</li>
+</ol>
+</figure>
 <h2>Training loss</h2>
 <figure class="solo solo--medium"><img src="assets/proj03/web/b--out--2.5_class_fm_loss.jpg" data-fullres="assets/proj03/b/out/2.5_class_fm_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<h1 class="sub-after-intro" id="b-class-sample">2.6 Sampling from the UNet</h1>
+<figure class="algo" aria-label="Sampling algorithm">
+<figcaption class="algo-head">Sampling</figcaption>
+<ol class="algo-body">
+<li class="algo-l0"><b>input</b>: one-hot vector <math class="inline-math"><mi>c</mi></math>, classifier guidance scale <math class="inline-math"><mi>γ</mi></math></li>
+<li class="algo-l0"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>=</mo><msub><mi mathvariant="normal">𝐱</mi><mn>0</mn></msub><mo>∼</mo><mi mathvariant="normal">𝒩</mi><mo stretchy="false">(</mo><mi mathvariant="normal">𝟎</mi><mo>,</mo><mi mathvariant="normal">𝐈</mi><mo stretchy="false">)</mo></math></li>
+<li class="algo-l0"><b>for</b> <math class="inline-math"><mi>t</mi></math> from 0 to 1, step size <math class="inline-math"><mfrac><mn>1</mn><mi>T</mi></mfrac></math> <b>do</b></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi>u</mi><mtext class="algo-it">uncond</mtext></msub><mo>=</mo><msub><mi>u</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mn>0</mn><mo stretchy="false">)</mo></math></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi>u</mi><mtext class="algo-it">cond</mtext></msub><mo>=</mo><msub><mi>u</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>,</mo><mi>t</mi><mo>,</mo><mi>c</mi><mo stretchy="false">)</mo></math></li>
+<li class="algo-l1"><math class="inline-math"><mi>u</mi><mo>=</mo><msub><mi>u</mi><mtext class="algo-it">uncond</mtext></msub><mo>+</mo><mi>γ</mi><mo stretchy="false">(</mo><msub><mi>u</mi><mtext class="algo-it">cond</mtext></msub><mo>−</mo><msub><mi>u</mi><mtext class="algo-it">uncond</mtext></msub><mo stretchy="false">)</mo></math><span class="algo-comment">▷ Classifier-free guidance</span></li>
+<li class="algo-l1"><math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>=</mo><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub><mo>+</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><mi>u</mi></math></li>
+<li class="algo-l0"><b>end for</b></li>
+<li class="algo-l0"><b>return</b> <math class="inline-math"><msub><mi mathvariant="normal">𝐱</mi><mi>t</mi></msub></math></li>
+</ol>
+</figure>
 <h2>Samples</h2>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
-<p class="placeholder">Your analysis.</p>
+<div class="epochs">
+<div class="epochs-row" style="--cols:2">
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch1.png" alt="Epoch 1 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch5.png" alt="Epoch 5 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+</div>
+<figure class="epoch-final solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+</div>
+<p>With class conditioning, I am able to supply a desired class and get consistently high-quality generations of that number, as you can see in the last epoch.</p>
 </div>
 
 <div class="section add-top-padding" id="b-nosched">
 <h1>Removing the Learning-Rate Scheduler</h1>
+<p>If I want to remove the learning rate scheduler for the sake of simplicity and don’t want to overshoot the optimum, I need to use a smaller learning rate, but a smaller learning rate takes longer to converge, so I also need to increase the number of epochs I train for. I go from an initial LR of 1e-2 with a 0.1× decay over 10 epochs to a constant 1e-3 LR that’s trained for 20 epochs.</p>
 <figure class="solo solo--medium"><img src="assets/proj03/web/b--out--2.5_class_fm_nosched_loss.jpg" data-fullres="assets/proj03/b/out/2.5_class_fm_nosched_loss.png" alt="" loading="lazy" class="solo-img"></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch5.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch15.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch15.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 15</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch20.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch20.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 20</figcaption></figure>
-<p class="placeholder">Your analysis.</p>
+<div class="epochs">
+<div class="epochs-row" style="--cols:4">
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch1.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch1.png" alt="Epoch 1 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch5.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch5.png" alt="Epoch 5 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 5</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch10.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch10.png" alt="Epoch 10 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch15.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch15.png" alt="Epoch 15 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 15</figcaption></figure>
+</div>
+<figure class="epoch-final solo"><div class="col-axis" style="--n:10"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div><img src="assets/proj03/web/b--grids--2.5_class_fm_nosched_epoch20.jpg" data-fullres="assets/proj03/b/grids/2.5_class_fm_nosched_epoch20.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 20</figcaption></figure>
+</div>
 </div>
 
 <div class="section add-top-padding" id="b-bells">
-<h1>Bells &amp; Whistles · CIFAR-10</h1>
+<h1 class="group-title" id="b-group-3">3. Bells &amp; Whistles</h1>
+<h1>CIFAR-10</h1>
+<p>CIFAR-10 is a dataset of 60,000 32×32 color images split evenly across 10 classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship and truck. 50,000 images are for training and 10,000 for testing; I train on the 50,000. Compared to MNIST, the images are in color, slightly larger, and far more varied in pose, background and lighting.</p>
+<h2>Time- and Class-Conditioned UNet</h2>
+<p>I made the following small modifications to the MNIST Time- and Class-Conditioned UNet:</p>
+<ul class="mods">
+<li>Switched from 1-channel 28×28 inputs to 3-channel 32×32 inputs, since CIFAR is RGB and has slightly higher dimensions.</li>
+<li>To accommodate the new dimensions and preserve the 1/2 downsampling ratio, I adjust the spatial sizes from 28 → 14 → 7 → 1 to 32 → 16 → 8 → 1 and, as a result, also change the average pooling and conv transpose operations to match those dimensions.</li>
+<li>I also use a hidden width of 128 to accommodate the higher complexity of the data.</li>
+</ul>
+<p class="exif params"><span>Parameters <b>9.0M</b></span><span>Epochs <b>100</b></span></p>
 <figure class="solo solo--medium"><img src="assets/proj03/web/b--out--cifar_fm_loss.jpg" data-fullres="assets/proj03/b/out/cifar_fm_loss.png" alt="" loading="lazy" class="solo-img"></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch1.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch10.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch25.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch25.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 25</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch50.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch50.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 50</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch75.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch75.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 75</figcaption></figure>
-<figure class="solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch100.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch100.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 100</figcaption></figure>
-<p class="placeholder">Your analysis.</p>
+<div class="epochs">
+<div class="epochs-row" style="--cols:5">
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_fm_epoch1.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch1.png" alt="Epoch 1 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_fm_epoch10.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch10.png" alt="Epoch 10 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_fm_epoch25.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch25.png" alt="Epoch 25 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 25</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_fm_epoch50.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch50.png" alt="Epoch 50 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 50</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_fm_epoch75.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch75.png" alt="Epoch 75 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 75</figcaption></figure>
+</div>
+<figure class="epoch-final solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_fm_epoch100.jpg" data-fullres="assets/proj03/b/grids/cifar_fm_epoch100.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 100</figcaption></figure>
+</div>
+<h2>Wider and Deeper UNet</h2>
+<p>I wasn’t satisfied with the generations of the previous architecture, so I introduced 3 major changes:</p>
+<ol class="mods">
+<li>Introduced two residual blocks at every resolution instead of one convolutional block. This allows for more expressive representations in the network, and it still trains well due to the presence of skip connections within the block itself, which help gradients flow.<sup class="fn-ref"><a href="#fn1" id="fnref1a" aria-describedby="references-title">[1]</a></sup></li>
+<li>Instead of pooling the 8×8 map into 1×1 and then blowing it back up with the conv transpose, I use a self-attention bottleneck that keeps it at 8×8 and allows it to get global spatial information by letting each position attend to every other position. It’s implemented with a residual block, which then goes through a multi-head self-attention layer and then into another residual block.<sup class="fn-ref"><a href="#fn1" id="fnref1b" aria-describedby="references-title">[1]</a></sup></li>
+<li>I insert time and class conditioning into <em>every</em> residual block, so the network is hyper-aware of the current noise level and the desired class to generate.<sup class="fn-ref"><a href="#fn2" id="fnref2a" aria-describedby="references-title">[2]</a></sup></li>
+</ol>
+<p>Finally, due to the presence of all the new layers and increased number of feature maps, the network is much deeper &amp; wider and can hopefully learn to make much better generations.</p>
+
+<!-- dunet-diagram:start -->
+<figure class="unet-fig">
+<div class="unet-scroll" tabindex="0" role="region" aria-label="Wider and deeper class- and time-conditioned UNet for CIFAR-10">
+<svg class="unet-svg" viewBox="0 40 1070 426" role="img" aria-labelledby="dunet-title dunet-desc">
+<title id="dunet-title">Wider and deeper class- and time-conditioned UNet for CIFAR-10</title>
+<desc id="dunet-desc">A 3×32×32 input x_t goes through a stem conv and two ResBlocks (128×32×32), a stride-2 conv and two ResBlocks (256×16×16), and another stride-2 conv and two ResBlocks (256×8×8). The 8×8 bottleneck is ResBlock, multi-head self-attention, ResBlock. The decoder concatenates each skip, applies two ResBlocks and a transposed conv per level, and a final 3×3 conv outputs the 3×32×32 flow. t and c each pass through an FCBlock to 512 dimensions; their sum, after GELU, sets a per-channel scale and shift in every ResBlock.</desc>
+<defs><marker id="dunet-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#6b7178" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="dunet-ah-skip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#9aa0a6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="dunet-ah-cond" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#e5484d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="dunet-ah-cls" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#b4359c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="dunet-ah-emb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#c43c6c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><linearGradient id="dunet-g-front" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6effe"/><stop offset="1" stop-color="#c3d6f8"/></linearGradient><linearGradient id="dunet-g-top" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f4f8ff"/><stop offset="1" stop-color="#dde8fc"/></linearGradient><linearGradient id="dunet-g-side" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a9c2f1"/><stop offset="1" stop-color="#86a8ea"/></linearGradient><linearGradient id="dunet-g-sfront" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef0f2"/><stop offset="1" stop-color="#d9dde1"/></linearGradient><linearGradient id="dunet-g-sside" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c9ced3"/><stop offset="1" stop-color="#b3b9bf"/></linearGradient><filter id="dunet-shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#1a2b4a" flood-opacity="0.16"/></filter></defs>
+<path class="unet-skip" d="M168.3,94.2 V58.8 H765.0 V81.8" marker-end="url(#dunet-ah-skip)"/>
+<path class="unet-skip" d="M265.7,224.2 V188.8 H635.9 V203.8" marker-end="url(#dunet-ah-skip)"/>
+<path class="unet-skip" d="M346.4,316.8 V281.2 H516.0 V296.2" marker-end="url(#dunet-ah-skip)"/>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Noisy input x_t, 3×32×32</title>
+<polygon points="34.0,99.0 36.4,97.3 102.4,97.3 100.0,99.0" fill="#3a3a3a" stroke="#111"/>
+<polygon points="100.0,99.0 102.4,97.3 102.4,163.3 100.0,165.0" fill="#222" stroke="#111"/>
+<rect x="34.0" y="99.0" width="66.0" height="66.0" fill="#111" stroke="#111"/>
+<image href="assets/proj03/web/b--derived--dunet_in.jpg" x="34.0" y="99.0" width="66" height="66" preserveAspectRatio="none" class="unet-img"/>
+<rect x="34.0" y="99.0" width="66" height="66" fill="none" stroke="#111"/>
+</g>
+<text class="unet-opname" x="68.2" y="183.0" text-anchor="middle" fill="#333333">Input</text>
+<text class="unet-dim" x="68.2" y="198.0" text-anchor="middle">3×32×32</text>
+<text class="unet-io" x="68.2" y="213.0" text-anchor="middle">noisy <tspan class="unet-sym">x</tspan><tspan class="unet-sub" dy="4">t</tspan></text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Stem conv, then two ResBlocks (skip 1), 128×32×32</title>
+<polygon points="128.4,99.0 142.1,89.5 208.1,89.5 194.4,99.0" fill="url(#dunet-g-top)" stroke="#5f8de0"/>
+<polygon points="194.4,99.0 208.1,89.5 208.1,155.5 194.4,165.0" fill="url(#dunet-g-side)" stroke="#5f8de0"/>
+<rect x="128.4" y="99.0" width="66.0" height="66.0" fill="url(#dunet-g-front)" stroke="#5f8de0"/>
+<circle class="unet-emb-badge" cx="194.4" cy="99.0" r="4.5"><title>Receives the (t, c) embedding</title></circle>
+</g>
+<text class="unet-opname" x="168.3" y="183.0" text-anchor="middle" fill="#333333">Stem conv →</text>
+<text class="unet-opname" x="168.3" y="197.0" text-anchor="middle" fill="#0e7c86">2× ResB</text>
+<text class="unet-dim" x="168.3" y="212.0" text-anchor="middle">128×32×32</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Stride-2 conv, then two ResBlocks (skip 2), 256×16×16</title>
+<polygon points="234.1,233.0 259.3,215.5 297.3,215.5 272.1,233.0" fill="url(#dunet-g-top)" stroke="#5f8de0"/>
+<polygon points="272.1,233.0 297.3,215.5 297.3,253.5 272.1,271.0" fill="url(#dunet-g-side)" stroke="#5f8de0"/>
+<rect x="234.1" y="233.0" width="38.0" height="38.0" fill="url(#dunet-g-front)" stroke="#5f8de0"/>
+<circle class="unet-emb-badge" cx="272.1" cy="233.0" r="4.5"><title>Receives the (t, c) embedding</title></circle>
+</g>
+<text class="unet-opname" x="265.7" y="289.0" text-anchor="middle" fill="#2a9d8f">Down →</text>
+<text class="unet-opname" x="265.7" y="303.0" text-anchor="middle" fill="#2a9d8f">2× ResB</text>
+<text class="unet-dim" x="265.7" y="318.0" text-anchor="middle">256×16×16</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Stride-2 conv, then two ResBlocks (skip 3), 256×8×8</title>
+<polygon points="323.3,325.5 348.5,308.0 369.5,308.0 344.3,325.5" fill="url(#dunet-g-top)" stroke="#5f8de0"/>
+<polygon points="344.3,325.5 369.5,308.0 369.5,329.0 344.3,346.5" fill="url(#dunet-g-side)" stroke="#5f8de0"/>
+<rect x="323.3" y="325.5" width="21.0" height="21.0" fill="url(#dunet-g-front)" stroke="#5f8de0"/>
+<circle class="unet-emb-badge" cx="344.3" cy="325.5" r="4.5"><title>Receives the (t, c) embedding</title></circle>
+</g>
+<text class="unet-opname" x="346.4" y="364.5" text-anchor="middle" fill="#2a9d8f">Down →</text>
+<text class="unet-opname" x="346.4" y="378.5" text-anchor="middle" fill="#2a9d8f">2× ResB</text>
+<text class="unet-dim" x="346.4" y="393.5" text-anchor="middle">256×8×8</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Bottleneck at 8×8: ResBlock, multi-head self-attention, ResBlock, 256×8×8</title>
+<polygon points="395.5,399.5 420.7,382.0 441.7,382.0 416.5,399.5" fill="#fff7ea" stroke="#d08a2c"/>
+<polygon points="416.5,399.5 441.7,382.0 441.7,403.0 416.5,420.5" fill="#f0d29a" stroke="#d08a2c"/>
+<rect x="395.5" y="399.5" width="21.0" height="21.0" fill="#fdf0d9" stroke="#d08a2c"/>
+<circle class="unet-emb-badge" cx="416.5" cy="399.5" r="4.5"><title>Receives the (t, c) embedding</title></circle>
+</g>
+<text class="unet-opname" x="418.6" y="438.5" text-anchor="middle" fill="#c77d12">ResB → Attn → ResB</text>
+<text class="unet-dim" x="418.6" y="453.5" text-anchor="middle">256×8×8</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Bottleneck output concatenated with skip 3 → 512×8×8</title>
+<polygon points="492.9,308.0 518.1,290.5 539.1,290.5 513.9,308.0" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="513.9,308.0 539.1,290.5 539.1,311.5 513.9,329.0" fill="url(#dunet-g-sside)" stroke="#959ba1"/>
+<rect x="492.9" y="308.0" width="21.0" height="21.0" fill="url(#dunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="467.7,325.5 492.9,308.0 513.9,308.0 488.7,325.5" fill="url(#dunet-g-top)" stroke="#5f8de0"/>
+<polygon points="488.7,325.5 513.9,308.0 513.9,329.0 488.7,346.5" fill="url(#dunet-g-side)" stroke="#5f8de0"/>
+<rect x="467.7" y="325.5" width="21.0" height="21.0" fill="url(#dunet-g-front)" stroke="#5f8de0"/>
+</g>
+<text class="unet-opname" x="509.4" y="364.5" text-anchor="middle" fill="#6b7178">⊕ skip</text>
+<text class="unet-dim" x="509.4" y="379.5" text-anchor="middle">(256 + 256)×8×8</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Two ResBlocks (512 → 256 at 8×8), transposed conv to 256×16×16, concatenated with skip 2 → 512×16×16</title>
+<polygon points="604.3,215.5 629.5,198.0 667.5,198.0 642.3,215.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="642.3,215.5 667.5,198.0 667.5,236.0 642.3,253.5" fill="url(#dunet-g-sside)" stroke="#959ba1"/>
+<rect x="604.3" y="215.5" width="38.0" height="38.0" fill="url(#dunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="579.1,233.0 604.3,215.5 642.3,215.5 617.1,233.0" fill="url(#dunet-g-top)" stroke="#5f8de0"/>
+<polygon points="617.1,233.0 642.3,215.5 642.3,253.5 617.1,271.0" fill="url(#dunet-g-side)" stroke="#5f8de0"/>
+<rect x="579.1" y="233.0" width="38.0" height="38.0" fill="url(#dunet-g-front)" stroke="#5f8de0"/>
+<circle class="unet-emb-badge" cx="617.1" cy="233.0" r="4.5"><title>Receives the (t, c) embedding</title></circle>
+</g>
+<text class="unet-opname" x="623.3" y="289.0" text-anchor="middle" fill="#8b6cd9">2× ResB → Up</text>
+<text class="unet-opname" x="623.3" y="303.0" text-anchor="middle" fill="#8b6cd9">⊕ skip</text>
+<text class="unet-dim" x="623.3" y="318.0" text-anchor="middle">(256 + 256)×16×16</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Two ResBlocks (512 → 256 at 16×16), transposed conv to 128×32×32, concatenated with skip 1 → 256×32×32</title>
+<polygon points="725.2,89.5 738.9,80.0 804.9,80.0 791.2,89.5" fill="#eef0f2" stroke="#959ba1"/>
+<polygon points="791.2,89.5 804.9,80.0 804.9,146.0 791.2,155.5" fill="url(#dunet-g-sside)" stroke="#959ba1"/>
+<rect x="725.2" y="89.5" width="66.0" height="66.0" fill="url(#dunet-g-sfront)" stroke="#959ba1"/>
+<polygon points="711.5,99.0 725.2,89.5 791.2,89.5 777.5,99.0" fill="url(#dunet-g-top)" stroke="#5f8de0"/>
+<polygon points="777.5,99.0 791.2,89.5 791.2,155.5 777.5,165.0" fill="url(#dunet-g-side)" stroke="#5f8de0"/>
+<rect x="711.5" y="99.0" width="66.0" height="66.0" fill="url(#dunet-g-front)" stroke="#5f8de0"/>
+<circle class="unet-emb-badge" cx="777.5" cy="99.0" r="4.5"><title>Receives the (t, c) embedding</title></circle>
+</g>
+<text class="unet-opname" x="758.2" y="183.0" text-anchor="middle" fill="#8b6cd9">2× ResB → Up</text>
+<text class="unet-opname" x="758.2" y="197.0" text-anchor="middle" fill="#8b6cd9">⊕ skip</text>
+<text class="unet-dim" x="758.2" y="212.0" text-anchor="middle">(128 + 128)×32×32</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Two ResBlocks (256 → 128), 128×32×32</title>
+<polygon points="830.9,99.0 844.5,89.5 910.5,89.5 896.9,99.0" fill="url(#dunet-g-top)" stroke="#5f8de0"/>
+<polygon points="896.9,99.0 910.5,89.5 910.5,155.5 896.9,165.0" fill="url(#dunet-g-side)" stroke="#5f8de0"/>
+<rect x="830.9" y="99.0" width="66.0" height="66.0" fill="url(#dunet-g-front)" stroke="#5f8de0"/>
+<circle class="unet-emb-badge" cx="896.9" cy="99.0" r="4.5"><title>Receives the (t, c) embedding</title></circle>
+</g>
+<text class="unet-opname" x="870.7" y="183.0" text-anchor="middle" fill="#0e7c86">2× ResB</text>
+<text class="unet-dim" x="870.7" y="198.0" text-anchor="middle">128×32×32</text>
+<g class="unet-t" filter="url(#dunet-shadow)"><title>Predicted flow u_θ(x_t, t, c), 3×32×32</title>
+<polygon points="936.5,99.0 939.0,97.3 1005.0,97.3 1002.5,99.0" fill="#5a6067" stroke="#22262a"/>
+<polygon points="1002.5,99.0 1005.0,97.3 1005.0,163.3 1002.5,165.0" fill="#2b2f34" stroke="#22262a"/>
+<rect x="936.5" y="99.0" width="66.0" height="66.0" fill="#3b4046" stroke="#22262a"/>
+</g>
+<text class="unet-opname" x="970.8" y="183.0" text-anchor="middle" fill="#333333">Output conv</text>
+<text class="unet-dim" x="970.8" y="198.0" text-anchor="middle">3×32×32</text>
+<text class="unet-io" x="970.8" y="213.0" text-anchor="middle">flow <tspan class="unet-sym">u</tspan><tspan class="unet-sub" dy="4">θ</tspan></text>
+<path class="unet-op" d="M105.4,132.0 H125.4" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M211.1,132.0 H216.1 Q221.1,132.0 221.1,137.0 V247.0 Q221.1,252.0 226.1,252.0 H231.1" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M300.3,252.0 H305.3 Q310.3,252.0 310.3,257.0 V331.0 Q310.3,336.0 315.3,336.0 H320.3" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M372.5,336.0 H377.5 Q382.5,336.0 382.5,341.0 V405.0 Q382.5,410.0 387.5,410.0 H392.5" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M444.7,410.0 H449.7 Q454.7,410.0 454.7,405.0 V341.0 Q454.7,336.0 459.7,336.0 H464.7" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M542.1,336.0 H552.1 Q559.1,336.0 559.1,329.0 V259.0 Q559.1,252.0 566.1,252.0 H576.1" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M670.5,252.0 H682.5 Q689.5,252.0 689.5,245.0 V139.0 Q689.5,132.0 696.5,132.0 H708.5" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M807.9,132.0 H827.9" marker-end="url(#dunet-ah)"/>
+<path class="unet-op" d="M913.5,132.0 H933.5" marker-end="url(#dunet-ah)"/>
+<rect class="unet-cond-box unet-cond-box--neutral" x="713.5" y="258.0" width="348.0" height="132.0" rx="10"/>
+<text class="unet-cond-title" x="725.5" y="275.0"><tspan fill="#b4359c">Class</tspan><tspan fill="#6b7178"> and </tspan><tspan fill="#e5484d">time</tspan><tspan fill="#6b7178"> embedding</tspan></text>
+<path class="unet-cond-line" stroke="#e5484d" d="M748.5,300.0 H756.5" marker-end="url(#dunet-ah-cond)"/>
+<circle class="unet-cond-node" style="stroke:#e5484d" cx="737.5" cy="300.0" r="11"/>
+<text class="unet-cond-t" x="737.5" y="304.5" text-anchor="middle"><tspan class="unet-sym" fill="#e5484d">t</tspan></text>
+<rect class="unet-cond-fcb" style="stroke:#e5484d; fill:#fff5f5" x="759.5" y="288.0" width="96" height="24" rx="6"/>
+<text class="unet-cond-row" x="807.5" y="304.0" text-anchor="middle" fill="#e5484d"><tspan font-weight="700">FCB</tspan><tspan class="unet-sub" dy="3" fill="#e5484d">t</tspan><tspan dy="-3"> 1 → 512</tspan></text>
+<path class="unet-cond-line" stroke="#e5484d" d="M855.5,300.0 H875.5 Q881.5,300.0 881.5,306.0 V311.0" marker-end="url(#dunet-ah-cond)"/>
+<path class="unet-cond-line" stroke="#b4359c" d="M748.5,344.0 H756.5" marker-end="url(#dunet-ah-cls)"/>
+<circle class="unet-cond-node" style="stroke:#b4359c" cx="737.5" cy="344.0" r="11"/>
+<text class="unet-cond-t" x="737.5" y="348.5" text-anchor="middle"><tspan class="unet-sym" fill="#b4359c">c</tspan></text>
+<rect class="unet-cond-fcb" style="stroke:#b4359c; fill:#fdf3fa" x="759.5" y="332.0" width="96" height="24" rx="6"/>
+<text class="unet-cond-row" x="807.5" y="348.0" text-anchor="middle" fill="#b4359c"><tspan font-weight="700">FCB</tspan><tspan class="unet-sub" dy="3" fill="#b4359c">c</tspan><tspan dy="-3"> 10 → 512</tspan></text>
+<path class="unet-cond-line" stroke="#b4359c" d="M855.5,344.0 H875.5 Q881.5,344.0 881.5,338.0 V333.0" marker-end="url(#dunet-ah-cls)"/>
+<g class="unet-mul"><circle cx="881.5" cy="322.0" r="8" style="stroke:#c43c6c"/><path d="M877.1,322.0 H885.9 M881.5,317.6 V326.4" style="stroke:#c43c6c"/></g>
+<path class="unet-cond-line" stroke="#c43c6c" d="M889.5,322.0 H900.5" marker-end="url(#dunet-ah-emb)"/>
+<rect class="unet-emb-pill unet-emb-pill--gelu" x="903.5" y="311.0" width="48" height="22" rx="11"/>
+<text class="unet-emb-text" x="927.5" y="326.0" text-anchor="middle" fill="#c43c6c">GELU</text>
+<path class="unet-cond-line" stroke="#c43c6c" d="M951.5,322.0 H966.5" marker-end="url(#dunet-ah-emb)"/>
+<rect class="unet-emb-pill" x="969.5" y="310.0" width="78" height="24" rx="12"/>
+<text class="unet-emb-text unet-emb-text--on" x="1008.5" y="326.5" text-anchor="middle">emb · 512</text>
+<circle class="unet-emb-badge" cx="731.5" cy="375.0" r="4.5"/>
+<text class="unet-emb-note" x="741.5" y="379.0">scale &amp; shift inside every ResBlock of a marked block</text>
+</svg>
+</div>
+<dl class="unet-legend">
+<div><dt><span class="unet-swatch" style="--c:#0e7c86"></span>ResB</dt><dd>ResBlock: Conv 3×3 → BN → GELU → Conv 3×3 → BN, scaled and shifted by the embedding, plus a skip (1×1 conv when channels change) → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#2a9d8f"></span>Down</dt><dd>Conv 3×3, stride 2 → BatchNorm → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#8b6cd9"></span>Up</dt><dd>ConvTranspose 4×4, stride 2 → BatchNorm → GELU</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#c77d12"></span>Attn</dt><dd>Multi-head self-attention (4 heads) over the 64 positions of the 8×8 map, with GroupNorm and a residual add</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#333333"></span>Stem conv</dt><dd>First layer: Conv 3×3 → BatchNorm → GELU, 3 → 128 channels</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#333333"></span>Output conv</dt><dd>Last layer: Conv 3×3, 128 → 3 channels, giving the predicted flow</dd></div>
+<div><dt><span class="unet-swatch" style="--c:#c43c6c"></span>emb</dt><dd>FCB<sub>t</sub>(t) + FCB<sub>c</sub>(c), each 512-d, then GELU; each ResBlock maps it to a per-channel scale and shift</dd></div>
+<div><dt><span class="unet-swatch unet-swatch--skip"></span>Skip</dt><dd>Copy the encoder tensor and concatenate along channels (grey slab)</dd></div>
+</dl>
+<p class="table-note">Front face: spatial size. Depth: channels. D = 128; 21.0M parameters. Each block is a stage output, labelled with the operations that produced it. c is set to zero 10% of the time in training (p<sub>uncond</sub> = 0.1). Input shown: CIFAR-10 test image #3 mixed with noise at t = 0.5, for illustration.</p>
+</figure>
+<!-- dunet-diagram:end -->
+
+<!-- resblock-diagram:start -->
+<figure class="unet-fig rb-fig">
+<figcaption class="rb-caption">ResBlock</figcaption>
+<div class="unet-scroll" tabindex="0" role="region" aria-label="Residual block diagram">
+<svg class="unet-svg rb-svg" viewBox="0 0 860 236" role="img" aria-labelledby="rb-title rb-desc">
+<title id="rb-title">Residual block (ResBlock)</title>
+<desc id="rb-desc">The input goes through Conv 3×3, BatchNorm and GELU, then Conv 3×3 and BatchNorm. That result is multiplied channel-wise by (1 + scale) and shifted, where scale and shift come from a Linear layer mapping the 512-dimensional (t, c) embedding to 2 × C_out values. It is then added to the skip path (a 1×1 convolution when the channel count changes, otherwise the input itself) and passed through GELU.</desc>
+<defs><marker id="rb-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#6b7178" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="rb-ah-skip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#9aa0a6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="rb-ah-emb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#c43c6c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect class="rb-io" x="14" y="103" width="90" height="46" rx="14"/>
+<text class="rb-io-t" x="59" y="122" text-anchor="middle"><tspan class="unet-sym">h</tspan><tspan class="unet-sub" dy="4">in</tspan></text>
+<text class="unet-dim" x="59" y="141" text-anchor="middle">C<tspan dy="3" font-size="9">in</tspan><tspan dy="-3">×H×W</tspan></text>
+<rect class="rb-io" x="758" y="103" width="92" height="46" rx="14"/>
+<text class="rb-io-t" x="804" y="122" text-anchor="middle"><tspan class="unet-sym">h</tspan><tspan class="unet-sub" dy="4">out</tspan></text>
+<text class="unet-dim" x="804" y="141" text-anchor="middle">C<tspan dy="3" font-size="9">out</tspan><tspan dy="-3">×H×W</tspan></text>
+<rect x="122" y="109" width="178" height="34" rx="8" style="fill:#e8f5f6; stroke:#0e7c86" class="rb-box"/>
+<text class="rb-op" x="211.0" y="130.5" text-anchor="middle" fill="#0e7c86">Conv 3×3 → BN → GELU</text>
+<rect x="326" y="109" width="126" height="34" rx="8" style="fill:#e8f5f6; stroke:#0e7c86" class="rb-box"/>
+<text class="rb-op" x="389.0" y="130.5" text-anchor="middle" fill="#0e7c86">Conv 3×3 → BN</text>
+<g class="unet-mul"><title>Multiply each channel by (1 + scale)</title><circle cx="494" cy="126" r="10" style="stroke:#c43c6c"/><path d="M490.4,122.4 L497.6,129.6 M497.6,122.4 L490.4,129.6" style="stroke:#c43c6c"/></g>
+<g class="unet-mul"><title>Add shift to each channel</title><circle cx="548" cy="126" r="10" style="stroke:#c43c6c"/><path d="M543.6,126 H552.4 M548,121.6 V130.4" style="stroke:#c43c6c"/></g>
+<g class="unet-mul"><title>Residual add: main path + skip</title><circle cx="624" cy="126" r="10" style="stroke:#6b7178"/><path d="M619.6,126 H628.4 M624,121.6 V130.4" style="stroke:#6b7178"/></g>
+<rect x="656" y="109" width="78" height="34" rx="8" style="fill:#e8f5f6; stroke:#0e7c86" class="rb-box"/>
+<text class="rb-op" x="695.0" y="130.5" text-anchor="middle" fill="#0e7c86">GELU</text>
+<path class="unet-op" style="stroke:#6b7178" d="M106,126 H119" marker-end="url(#rb-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M302,126 H323" marker-end="url(#rb-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M454,126 H481" marker-end="url(#rb-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M506,126 H535" marker-end="url(#rb-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M560,126 H611" marker-end="url(#rb-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M636,126 H653" marker-end="url(#rb-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M736,126 H755" marker-end="url(#rb-ah)"/>
+<path class="unet-skip" d="M59,149 V191 Q59,198 66,198 H617 Q624,198 624,191 V139" marker-end="url(#rb-ah-skip)"/>
+<rect class="rb-skipbox" x="250" y="185" width="236" height="26" rx="7"/>
+<text class="rb-skip-t" x="368" y="202" text-anchor="middle">1×1 Conv if C<tspan dy="3" font-size="9">in</tspan><tspan dy="-3"> ≠ C</tspan><tspan dy="3" font-size="9">out</tspan><tspan dy="-3">, else identity</tspan></text>
+<rect class="unet-emb-pill" x="196" y="18" width="86" height="24" rx="12"/>
+<text class="unet-emb-text unet-emb-text--on" x="239" y="34.5" text-anchor="middle">emb · 512</text>
+<path class="unet-cond-line" style="stroke:#c43c6c" d="M282,30 H404" marker-end="url(#rb-ah-emb)"/>
+<rect class="rb-lin" x="407" y="16" width="180" height="28" rx="7"/>
+<text class="rb-lin-t" x="497" y="34.5" text-anchor="middle">Linear 512 → 2·C<tspan dy="3" font-size="9">out</tspan></text>
+<path class="unet-cond-line" style="stroke:#c43c6c" d="M521.0,44 V72"/>
+<text class="rb-lab" x="528.0" y="61">2·C<tspan dy="3" font-size="8.5">out</tspan></text>
+<rect class="rb-split" x="492" y="70.5" width="58" height="3" rx="1.5"><title>Split the 2·C_out values in half</title></rect>
+<text class="rb-lab rb-lab--split" x="558" y="76">split</text>
+<path class="unet-cond-line" style="stroke:#c43c6c" d="M494,73.5 V113" marker-end="url(#rb-ah-emb)"/>
+<path class="unet-cond-line" style="stroke:#c43c6c" d="M548,73.5 V113" marker-end="url(#rb-ah-emb)"/>
+<text class="rb-lab" x="487" y="97" text-anchor="end">scale <tspan class="rb-lab-n">(first C<tspan dy="3" font-size="8.5">out</tspan><tspan dy="-3">)</tspan></tspan></text>
+<text class="rb-lab" x="555" y="97">shift <tspan class="rb-lab-n">(last C<tspan dy="3" font-size="8.5">out</tspan><tspan dy="-3">)</tspan></tspan></text>
+<text class="rb-lab rb-lab--node" x="494" y="154" text-anchor="middle">× (1 + scale)</text>
+<text class="rb-lab rb-lab--node" x="554" y="168" text-anchor="middle">+ shift</text>
+</svg>
+</div>
+<p class="table-note">Each ResBlock has its own Linear layer, sized to its output channels. Its weights start at zero, so every block starts with scale 0 and shift 0, unconditioned.</p>
+</figure>
+<!-- resblock-diagram:end -->
+
+<!-- attnblock-diagram:start -->
+<figure class="unet-fig rb-fig">
+<figcaption class="rb-caption" style="color:#c77d12">Attn</figcaption>
+<div class="unet-scroll" tabindex="0" role="region" aria-label="Self-attention diagram">
+<svg class="unet-svg rb-svg" viewBox="0 0 860 168" role="img" aria-labelledby="ab-title ab-desc">
+<title id="ab-title">Self-attention layer (Attn)</title>
+<desc id="ab-desc">The 256×8×8 input is group-normalised, flattened into 64 tokens of 256 channels, passed through 4-head self-attention with queries, keys and values all projected from the tokens, reshaped back to 256×8×8 and added to the un-normalised input.</desc>
+<defs><marker id="ab-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#6b7178" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="ab-ah-skip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M3.5 1.5 L9 5 L3.5 8.5" fill="none" stroke="#9aa0a6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect class="rb-io" x="14" y="39" width="92" height="46" rx="14"/>
+<text class="rb-io-t" x="60" y="58" text-anchor="middle"><tspan class="unet-sym">h</tspan><tspan class="unet-sub" dy="4">in</tspan></text>
+<text class="unet-dim" x="60" y="77" text-anchor="middle">256×8×8</text>
+<rect class="rb-io" x="752" y="39" width="92" height="46" rx="14"/>
+<text class="rb-io-t" x="798" y="58" text-anchor="middle"><tspan class="unet-sym">h</tspan><tspan class="unet-sub" dy="4">out</tspan></text>
+<text class="unet-dim" x="798" y="77" text-anchor="middle">256×8×8</text>
+<rect x="128" y="45" width="104" height="34" rx="8" class="rb-box" style="fill:#fdf3e2; stroke:#c77d12"/>
+<text class="rb-op" x="180.0" y="66.5" text-anchor="middle" fill="#c77d12">GroupNorm</text>
+<text class="unet-dim" x="180.0" y="94" text-anchor="middle">8 groups</text>
+<rect x="254" y="45" width="128" height="34" rx="8" class="rb-box" style="fill:#fdf3e2; stroke:#c77d12"/>
+<text class="rb-op" x="318.0" y="66.5" text-anchor="middle" fill="#c77d12">Flatten</text>
+<text class="unet-dim" x="318.0" y="94" text-anchor="middle">64 tokens × 256</text>
+<rect x="404" y="45" width="176" height="34" rx="8" class="rb-box" style="fill:#fdf3e2; stroke:#c77d12"/>
+<text class="rb-op" x="492.0" y="66.5" text-anchor="middle" fill="#c77d12">Self-attention · 4 heads</text>
+<text class="unet-dim" x="492.0" y="94" text-anchor="middle">64 × 256</text>
+<rect x="602" y="45" width="98" height="34" rx="8" class="rb-box" style="fill:#fdf3e2; stroke:#c77d12"/>
+<text class="rb-op" x="651.0" y="66.5" text-anchor="middle" fill="#c77d12">Reshape</text>
+<text class="unet-dim" x="651.0" y="94" text-anchor="middle">256×8×8</text>
+<g class="unet-mul"><title>Residual add: input + attention output</title><circle cx="726" cy="62" r="10" style="stroke:#6b7178"/><path d="M721.6,62 H730.4 M726,57.6 V66.4" style="stroke:#6b7178"/></g>
+<path class="unet-op" style="stroke:#6b7178" d="M108,62 H125" marker-end="url(#ab-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M234,62 H251" marker-end="url(#ab-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M384,62 H401" marker-end="url(#ab-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M582,62 H599" marker-end="url(#ab-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M702,62 H713" marker-end="url(#ab-ah)"/>
+<path class="unet-op" style="stroke:#6b7178" d="M738,62 H749" marker-end="url(#ab-ah)"/>
+<path class="unet-skip" d="M60,85 V133 Q60,140 67,140 H719 Q726,140 726,133 V75" marker-end="url(#ab-ah-skip)"/>
+<rect class="rb-skipbox" x="300" y="127" width="206" height="26" rx="7"/>
+<text class="rb-skip-t" x="403" y="144" text-anchor="middle">identity (un-normalised input)</text>
+</svg>
+</div>
+</figure>
+<!-- attnblock-diagram:end -->
+<p class="exif params"><span>Parameters <b>21.0M</b></span><span>Epochs <b>100</b></span></p>
+<figure class="solo solo--medium"><img src="assets/proj03/web/b--out--cifar_deep_loss.jpg" data-fullres="assets/proj03/b/out/cifar_deep_loss.png" alt="" loading="lazy" class="solo-img"></figure>
+<div class="epochs">
+<div class="epochs-row" style="--cols:5">
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_deep_epoch1.jpg" data-fullres="assets/proj03/b/grids/cifar_deep_epoch1.png" alt="Epoch 1 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 1</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_deep_epoch10.jpg" data-fullres="assets/proj03/b/grids/cifar_deep_epoch10.png" alt="Epoch 10 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 10</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_deep_epoch25.jpg" data-fullres="assets/proj03/b/grids/cifar_deep_epoch25.png" alt="Epoch 25 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 25</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_deep_epoch50.jpg" data-fullres="assets/proj03/b/grids/cifar_deep_epoch50.png" alt="Epoch 50 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 50</figcaption></figure>
+<figure class="epoch-thumb"><img src="assets/proj03/web/b--grids--cifar_deep_epoch75.jpg" data-fullres="assets/proj03/b/grids/cifar_deep_epoch75.png" alt="Epoch 75 samples" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 75</figcaption></figure>
+</div>
+<figure class="epoch-final solo"><div class="col-axis" style="--n:10"><span>airplane</span><span>automobile</span><span>bird</span><span>cat</span><span>deer</span><span>dog</span><span>frog</span><span>horse</span><span>ship</span><span>truck</span></div><img src="assets/proj03/web/b--grids--cifar_deep_epoch100.jpg" data-fullres="assets/proj03/b/grids/cifar_deep_epoch100.png" alt="" loading="lazy" class="solo-img pixel"><figcaption class="cell-label">Epoch 100</figcaption></figure>
+</div>
+<p>The generations using this deeper architecture slightly outperform the original architecture when trained for 100 epochs. Training for longer would likely yield better results.</p>
+</div>
+
+<div class="section add-top-padding" id="references">
+<h1 class="group-title" id="references-title">References</h1>
+<ol class="footnotes">
+<li id="fn1">This architecture was motivated by <cite>Denoising Diffusion Probabilistic Models</cite> (Ho et al., 2020). J. Ho, A. Jain, and P. Abbeel, “Denoising Diffusion Probabilistic Models,” <i>Advances in Neural Information Processing Systems (NeurIPS)</i>, 2020. <a href="https://arxiv.org/abs/2006.11239">arXiv:2006.11239</a> <a class="fn-back" href="#fnref1a" aria-label="Back to text">↩</a></li>
+<li id="fn2">The time/class conditioning in every block was inspired by <cite>Diffusion Models Beat GANs on Image Synthesis</cite> (Dhariwal and Nichol, 2021). P. Dhariwal and A. Nichol, “Diffusion Models Beat GANs on Image Synthesis,” <i>Advances in Neural Information Processing Systems (NeurIPS)</i>, 2021. <a href="https://arxiv.org/abs/2105.05233">arXiv:2105.05233</a> <a class="fn-back" href="#fnref2a" aria-label="Back to text">↩</a></li>
+</ol>
 </div>
 
 <div class="section add-top-padding" id="learned">
-<h1>Conclusion</h1>
-<p class="placeholder">Conclusion.</p>
+<h1 class="group-title">Conclusion</h1>
+<p>I learned a lot about flow matching in this project, and it was a lot of fun implementing the architectures from scratch!</p>
 </div>
 
 <footer class="foot">

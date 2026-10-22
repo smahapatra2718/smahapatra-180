@@ -2095,19 +2095,21 @@ td.placeholder { font-style: italic; }
     color: #929292;
 }
 
-/* Marks where each part begins, above the first section's heading. */
-.part-kicker {
-    order: -1;
-    margin: 0 0 6px !important;
-    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #488af3;
+/* Part > group (1., 2., 3.) > section (1.1, 1.2, ...). Each part opens with a rule. */
+.p3 .section.part-start { border-top: 1px solid #e2e2e2; margin-top: 48px; padding-top: 52px; }
+.p3 .section h1.part-title { font-size: 34px; line-height: 1.2; font-weight: 700; letter-spacing: -0.3px; margin: 0 0 36px; }
+.p3 .part-num { color: #488af3; }
+.p3 .section h1.group-title { font-size: 30px; line-height: 1.3; font-weight: 700; margin: 0 0 14px; }
+.p3 .section h1:not(.part-title):not(.group-title):not(.title):not(.tldr) { font-size: 24px; color: #333; }
+.p3 .section h1.group-title + h1 { margin-top: 18px; }
+.p3 .section h1.sub-after-intro { margin-top: 44px; }
+.flow-loss { margin: 8px 0 4px; text-align: center; }
+.section-index .index-part a { color: #929292; font-weight: 600; margin-top: 6px; }
+@media (max-width: 760px) {
+    .p3 .section h1.part-title { font-size: 28px; margin-bottom: 26px; }
+    .p3 .section h1.group-title { font-size: 24px; }
+    .p3 .section h1:not(.part-title):not(.group-title):not(.title):not(.tldr) { font-size: 21px; }
 }
-.section:has(> .part-kicker) { display: flex; flex-direction: column; }
-.section:has(> .part-kicker) { border-top: 1px solid #e2e2e2; margin-top: 48px; padding-top: 48px; }
 
 .matrix-narrow { max-width: 520px; margin-inline: auto; }
 
@@ -2227,3 +2229,211 @@ img.pixel { image-rendering: pixelated; }
     .cfg-diagram { max-width: 300px; margin-inline: auto; }
 }
 .cfg-explainer .metric-definitions { flex-direction: column; align-items: center; gap: 2px; }
+.flow-interp { margin: 0 0 6px; padding-top: 2px; text-align: center; }
+.section p.continues { margin-top: 0; }
+.flow-interp math + math { margin-top: 8px; }
+
+/* ---- Part B 1.1: UNet diagram ------------------------------------------ */
+/* Tensors as blocks: front face is the spatial size, depth the channel count. */
+.unet-fig { margin: 18px 0 8px; }
+.unet-scroll { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 10px; }
+.unet-svg { display: block; width: 100%; min-width: 680px; height: auto; }
+.unet-svg polygon, .unet-svg rect { stroke-width: 1; stroke-linejoin: round; }
+.unet-svg .unet-img { image-rendering: pixelated; }
+.unet-svg .unet-op { fill: none; stroke: #6b7178; stroke-width: 1.5; stroke-linecap: butt; stroke-linejoin: round; }
+.unet-svg .unet-skip { fill: none; stroke: #9aa0a6; stroke-width: 1.4; stroke-dasharray: 4 4; }
+.unet-svg text { font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif; }
+.unet-svg .unet-dim { font-size: 12.5px; font-weight: 500; fill: #7d8389; font-variant-numeric: tabular-nums; }
+.unet-svg .unet-opname { font-size: 13px; font-weight: 700; }
+.unet-svg .unet-t:hover polygon, .unet-svg .unet-t:hover rect { filter: brightness(0.96); }
+
+.unet-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 28px;
+    margin: 18px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.unet-legend > div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.unet-legend dt { font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif; font-weight: 600; color: #333; white-space: nowrap; }
+.unet-legend dd { margin: 0; color: #666; }
+.unet-swatch {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    margin: 0 8px 1px 0;
+    border-radius: 50%;
+    background: var(--c);
+    vertical-align: middle;
+}
+.unet-swatch--skip { width: 16px; height: 0; border-radius: 0; background: none; border-top: 1.5px dashed #9aa0a6; }
+.unet-fig .table-note { margin-top: 12px !important; }
+
+@media (max-width: 760px) {
+    .unet-legend { grid-template-columns: minmax(0, 1fr); }
+}
+.unet-svg .unet-io { font-size: 12.5px; font-style: italic; fill: #555; }
+.unet-svg .unet-sym { font-family: 'STIX Two Math', 'Cambria Math', 'Latin Modern Math', 'DejaVu Serif', 'Times New Roman', serif; font-style: italic; font-size: 14px; fill: #333; }
+
+/* Sample grids with their rows named up the left edge, as in .matrix-row. */
+.rows-wrap { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.row-labels { display: grid; grid-template-rows: repeat(var(--rows), minmax(0, 1fr)); }
+.row-labels span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    justify-self: center;
+    align-self: center;
+    text-align: center;
+    white-space: nowrap;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #9aa0a6;
+}
+.rows-labelled .cell-label { padding-left: 30px; }
+@media (max-width: 760px) {
+    .row-labels span { font-size: 10px; letter-spacing: 0; }
+}
+
+/* 2.1: time conditioning, boxed in red */
+.unet-svg .unet-sub { font-size: 10px; font-style: italic; fill: #555; }
+.unet-svg .unet-cond-box { fill: rgba(229, 72, 77, 0.04); stroke: #e5484d; stroke-width: 1.5; }
+.unet-svg .unet-cond-title { font-size: 12px; font-weight: 700; fill: #e5484d; letter-spacing: 0.02em; }
+.unet-svg .unet-cond-line { fill: none; stroke: #e5484d; stroke-width: 1.5; stroke-linejoin: round; }
+.unet-svg .unet-cond-node { fill: #fff; stroke: #e5484d; stroke-width: 1.5; }
+.unet-svg .unet-cond-t .unet-sym { fill: #e5484d; font-size: 15px; }
+.unet-svg .unet-cond-fcb { fill: #fff5f5; stroke: #e5484d; stroke-width: 1.5; }
+.unet-svg .unet-cond-name { font-size: 12.5px; font-weight: 700; fill: #c93b40; }
+.unet-svg .unet-cond-dim { font-size: 11px; fill: #c93b40; font-variant-numeric: tabular-nums; }
+.unet-svg .unet-mul circle { fill: #fff; stroke: #e5484d; stroke-width: 1.5; }
+.unet-svg .unet-mul path { stroke: #e5484d; stroke-width: 1.6; stroke-linecap: round; }
+.unet-mul-swatch {
+    display: inline-grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    margin: 0 6px 1px -2px;
+    border: 1.5px solid #e5484d;
+    border-radius: 50%;
+    color: #e5484d;
+    font-size: 11px;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* A short list of changes, in body type */
+.section ul.mods, .section ol.mods { margin: 0 0 16px; padding-left: 1.3em; }
+.section ul.mods li, .section ol.mods li { margin: 0 0 6px; }
+.unet-svg polygon[stroke="#e5484d"], .unet-svg rect[stroke="#e5484d"] { stroke-width: 1.6; }
+.unet-svg .unet-scaled { fill: #e5484d; font-weight: 700; }
+
+/* Pseudocode, in the page's type rather than LaTeX's */
+.algo {
+    margin: 18px 0 26px;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+}
+.algo-head {
+    padding: 10px 18px;
+    background: #f6f7f9;
+    border-bottom: 1px solid #e2e2e2;
+    font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif;
+    font-size: 15px;
+    color: #333;
+}
+.algo-head b { color: #1a1a1a; margin-right: 6px; }
+.algo-body {
+    margin: 0;
+    padding: 12px 18px 14px 0;
+    list-style: none;
+    counter-reset: algo;
+    font-size: 15px;
+    line-height: 1.75;
+}
+.algo-body li { counter-increment: algo; position: relative; padding-left: 46px; }
+.algo-body li::before {
+    content: counter(algo) ":";
+    position: absolute;
+    left: 0;
+    width: 34px;
+    text-align: right;
+    color: #9aa0a6;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+.algo-body .algo-l1 { padding-left: 74px; }
+.algo-body b { font-weight: 700; color: #1a1a1a; }
+.algo-math { display: block; padding: 2px 0 0 22px; }
+.algo-body math.inline-math { font-size: 1.08em; }
+.algo-body .algo-comment { float: right; padding-left: 16px; color: #555; font-family: 'STIX Two Math', 'Cambria Math', 'Latin Modern Math', serif; }
+.algo-body mtext.algo-it { font-style: italic; }
+@media (max-width: 760px) {
+    .algo-body .algo-comment { float: none; display: block; padding-left: 0; font-size: 13px; }
+}
+.unet-svg .unet-cond-box--neutral { fill: rgba(107, 113, 120, 0.035); stroke: #b0b4b8; }
+.unet-svg .unet-cond-row { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+/* Epoch series: earlier epochs as a row of thumbnails, the final one full width */
+.epochs { margin: 20px 0 8px; }
+.epochs-row { display: flex; justify-content: center; gap: 12px; }
+.epoch-thumb { margin: 0; flex: 0 1 calc((100% - (var(--cols) - 1) * 12px) / var(--cols)); min-width: 0; }
+.epoch-thumb img { display: block; width: 100%; height: auto; border-radius: 6px; image-rendering: pixelated; }
+.epoch-thumb .cell-label { margin-top: 6px; }
+.epochs .epoch-final { margin-top: 18px; }
+@media (max-width: 760px) {
+    .epochs-row { flex-wrap: wrap; }
+    .epoch-thumb { flex-basis: calc(50% - 6px); }
+}
+.unet-svg .unet-emb-badge { fill: #c43c6c; stroke: #fff; stroke-width: 1.5; }
+.unet-svg .unet-emb-pill { fill: #c43c6c; stroke: #c43c6c; stroke-width: 1.5; }
+.unet-svg .unet-emb-pill--gelu { fill: #fff; }
+.unet-svg .unet-emb-text { font-size: 11.5px; font-weight: 700; }
+.unet-svg .unet-emb-text--on { fill: #fff; }
+.unet-svg .unet-emb-note { font-size: 11px; fill: #6b7178; }
+
+/* Footnotes */
+.fn-ref { font-size: 0.72em; line-height: 0; margin-left: 1px; }
+.fn-ref a { color: #488af3; text-decoration: none; font-weight: 600; }
+.fn-ref a:hover, .fn-ref a:focus-visible { text-decoration: underline; }
+.section ol.footnotes { margin: 0; padding-left: 1.6em; font-size: 14px; line-height: 1.6; color: #555; }
+.section ol.footnotes li { margin: 0 0 10px; padding-left: 4px; }
+.footnotes cite { font-style: italic; }
+.footnotes a { color: #488af3; }
+.footnotes .fn-back { text-decoration: none; margin-left: 2px; }
+
+/* ResBlock flow diagram */
+.rb-fig { margin-top: 26px; }
+.rb-caption { font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif; font-size: 15px; font-weight: 700; color: #0e7c86; margin: 0 0 4px; }
+.rb-svg { min-width: 640px; }
+.rb-svg .rb-box { stroke-width: 1.5; }
+.rb-svg .rb-op { font-size: 13px; font-weight: 700; }
+.rb-svg .rb-io { fill: #f3f4f6; stroke: #9aa0a6; stroke-width: 1.2; }
+.rb-svg .rb-io-t .unet-sym { font-size: 15px; }
+.rb-svg .rb-skipbox { fill: #fff; stroke: #b0b4b8; stroke-width: 1.2; stroke-dasharray: 3 3; }
+.rb-svg .rb-skip-t { font-size: 12px; fill: #6b7178; font-weight: 600; }
+.rb-svg .rb-lin { fill: #fdf0f4; stroke: #c43c6c; stroke-width: 1.5; }
+.rb-svg .rb-lin-t { font-size: 12.5px; font-weight: 700; fill: #c43c6c; }
+.rb-svg .rb-lab { font-size: 11.5px; fill: #c43c6c; font-weight: 600; font-family: 'Avenir Next', Avenir, 'Open Sans', sans-serif; }
+.rb-svg .rb-lab--node { fill: #9b2f56; font-weight: 500; }
+.rb-svg .rb-split { fill: #c43c6c; }
+.rb-svg .rb-lab--split { font-size: 10.5px; fill: #9b2f56; font-style: italic; font-weight: 500; }
+.rb-svg .rb-lab-n { font-weight: 500; fill: #9b2f56; }
+.rb-svg .ab-note { font-size: 11px; fill: #9a6510; font-style: italic; font-family: "Avenir Next", Avenir, "Open Sans", sans-serif; }
+
+/* Home page: the Project 3 thumbnail is a visual anagram; turn it over on hover or focus */
+.frame--flip img { transition: transform 0.7s ease; }
+a.dir-link:hover .frame--flip img,
+a.dir-link:focus-visible .frame--flip img { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+    .frame--flip img { transition: none; }
+}
+@media print {
+    .frame--flip img { transform: none !important; }
+}
+/* Square anagram in the 4:3 thumbnail: show all of it; the window's black ground fills the sides */
+.dir-thumb .frame--flip { background: #000; }
+.dir-thumb .frame--flip img { object-fit: contain; }

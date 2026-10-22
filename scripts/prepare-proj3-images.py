@@ -18,14 +18,19 @@ CS180 = Path.home() / "cs180"
 PART_A = CS180 / "proj3_a_submission"
 PART_B = CS180 / "proj3_b_submission"
 RUN_A = PART_A / "results" / "parta_updated" / "20261012-140020-182b40"
+# The 3.1 web image was redone with a painting in an editing-only run; every
+# other output in that run is byte-identical to RUN_A.
+RUN_A_FROM = {"edit_web_image": PART_A / "results" / "parta_updated" / "20261021-194802-697d17"}
 RUN_B = PART_B / "results" / "partb" / "all"
+# Bells & whistles: a wider, deeper CIFAR-10 UNet trained with the same recipe.
+RUN_B_DEEP = PART_B / "results" / "partb" / "cifar_deep"
 ASSETS = Path(__file__).resolve().parents[1] / "assets" / "proj03"
 WEB = ASSETS / "web"
 
 LONG_EDGE = 1200
 WIDE_LONG_EDGE = 2000
 
-A_INPUTS = ["mcway_falls.jpg", "plant.jpeg", "campanile.jpg", "glass.png", "mike.png", "squidward.png"]
+A_INPUTS = ["mcway_falls.jpg", "plant.jpeg", "campanile.jpg", "painting_espresso.png", "mike.png", "squidward.png"]
 
 # Figures whose panels can hold large white areas borrow the panel boxes of a
 # figure with the same layout and full-bleed content.
@@ -96,8 +101,12 @@ def panel_boxes(path):
     return sorted(boxes, key=lambda b: (b[1] // 50, b[0]))
 
 
+def run_a(name):
+    return RUN_A_FROM.get(name, RUN_A) / f"{name}.png"
+
+
 def slice_figure(name):
-    src = RUN_A / f"{name}.png"
+    src = run_a(name)
     boxes = panel_boxes(RUN_A / f"{LAYOUT_FROM.get(name, name)}.png")
     with Image.open(src) as im:
         im = flatten(im)
@@ -109,9 +118,9 @@ def slice_figure(name):
     return len(boxes)
 
 
-def crop_grid(name):
+def crop_grid(name, run=RUN_B):
     """Crop a Part B sample grid to its dark image area."""
-    with Image.open(RUN_B / f"{name}.png") as im:
+    with Image.open(run / f"{name}.png") as im:
         im = flatten(im)
         a = np.asarray(im.convert("L"))
         dark = a < 200
@@ -135,6 +144,46 @@ def derive_hybrid_far():
         derive(ASSETS / rel, rel)
 
 
+def derive_unet_io():
+    # The 1.1 diagram's input and output: one test digit from the 1.2.1 epoch-5
+    # grid (rows: clean, noisy, denoised). make_grid pads 2 px around 28 px cells.
+    with Image.open(ASSETS / "b" / "grids" / "1.2.1_denoise_epoch5.png") as im:
+        im = im.convert("L")
+        scale = im.width / (8 * 30 + 2)
+        for name, row in (("unet_in", 1), ("unet_out", 2)):
+            x0, y0 = 2 * scale, (2 + row * 30) * scale
+            cell = im.crop((round(x0), round(y0), round(x0 + 28 * scale), round(y0 + 28 * scale)))
+            rel = f"b/derived/{name}.png"
+            (ASSETS / rel).parent.mkdir(parents=True, exist_ok=True)
+            cell.resize((112, 112), Image.Resampling.NEAREST).save(ASSETS / rel)
+            derive(ASSETS / rel, rel, keep_pixels=True)
+
+        # 2.1 diagram input: the same test digit as x_t = (1 - t) x_0 + t x_1 at
+        # t = 0.5, an illustration of the formula (no model involved).
+        x0, y0 = 2 * scale, 2 * scale
+        clean = im.crop((round(x0), round(y0), round(x0 + 28 * scale), round(y0 + 28 * scale)))
+        x1 = np.asarray(clean.resize((28, 28), Image.Resampling.BOX), dtype=float) / 255
+        eps = np.random.default_rng(0).standard_normal((28, 28))
+        xt = np.clip(0.5 * eps + 0.5 * x1, 0, 1)
+        rel = "b/derived/tunet_in.png"
+        Image.fromarray((xt * 255).round().astype("uint8")).resize((112, 112), Image.Resampling.NEAREST).save(ASSETS / rel)
+        derive(ASSETS / rel, rel, keep_pixels=True)
+
+
+def derive_dunet_in():
+    # Input for the wider/deeper CIFAR diagram: CIFAR-10 test image #3 (an
+    # airplane) as x_t = (1 - t) x_0 + t x_1 at t = 0.5, for illustration only.
+    import torch
+    data = torch.load(PART_B / "data" / "cifar10_test.pt", weights_only=True)
+    x1 = data["images"][3].permute(1, 2, 0).numpy().astype(float) / 255
+    eps = np.random.default_rng(0).standard_normal(x1.shape)
+    xt = np.clip(0.5 * eps + 0.5 * x1, 0, 1)
+    rel = "b/derived/dunet_in.png"
+    (ASSETS / rel).parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray((xt * 255).round().astype("uint8")).resize((128, 128), Image.Resampling.NEAREST).save(ASSETS / rel)
+    derive(ASSETS / rel, rel, keep_pixels=True)
+
+
 def main():
     WEB.mkdir(parents=True, exist_ok=True)
     for name in A_INPUTS:
@@ -143,6 +192,7 @@ def main():
         shutil.copy2(PART_A / "assets" / name, ASSETS / rel)
         derive(ASSETS / rel, rel)
     for p in sorted(RUN_A.glob("*.png")):
+        p = run_a(p.stem)
         rel = f"a/out/{p.name}"
         (ASSETS / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(p, ASSETS / rel)
@@ -159,6 +209,15 @@ def main():
             derive(ASSETS / rel, rel)
         else:
             crop_grid(p.stem)
+    derive_unet_io()
+    for p in sorted(RUN_B_DEEP.glob("*.png")):
+        rel = f"b/out/{p.name}"
+        shutil.copy2(p, ASSETS / rel)
+        if p.stem.endswith("loss"):
+            derive(ASSETS / rel, rel)
+        else:
+            crop_grid(p.stem, RUN_B_DEEP)
+    derive_dunet_in()
 
 
 if __name__ == "__main__":
