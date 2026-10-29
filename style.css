@@ -2095,19 +2095,20 @@ td.placeholder { font-style: italic; }
     color: #929292;
 }
 
-/* Part > group (1., 2., 3.) > section (1.1, 1.2, ...). Each part opens with a rule. */
-.p3 .section.part-start { border-top: 1px solid #e2e2e2; margin-top: 48px; padding-top: 52px; }
-.p3 .section h1.part-title { font-size: 34px; line-height: 1.2; font-weight: 700; letter-spacing: -0.3px; margin: 0 0 36px; }
-.p3 .part-num { color: #488af3; }
-.p3 .section h1.group-title { font-size: 30px; line-height: 1.3; font-weight: 700; margin: 0 0 14px; }
+/* Part > group (1., 2., 3.) > section (1.1, 1.2, ...). Each part opens with a rule.
+   Project 4 uses the same part and group headings. */
+.p3 .section.part-start, .p4 .section.part-start { border-top: 1px solid #e2e2e2; margin-top: 48px; padding-top: 52px; }
+.p3 .section h1.part-title, .p4 .section h1.part-title { font-size: 34px; line-height: 1.2; font-weight: 700; letter-spacing: -0.3px; margin: 0 0 36px; }
+.p3 .part-num, .p4 .part-num { color: #488af3; }
+.p3 .section h1.group-title, .p4 .section h1.group-title { font-size: 30px; line-height: 1.3; font-weight: 700; margin: 0 0 14px; }
 .p3 .section h1:not(.part-title):not(.group-title):not(.title):not(.tldr) { font-size: 24px; color: #333; }
 .p3 .section h1.group-title + h1 { margin-top: 18px; }
 .p3 .section h1.sub-after-intro { margin-top: 44px; }
 .flow-loss { margin: 8px 0 4px; text-align: center; }
 .section-index .index-part a { color: #929292; font-weight: 600; margin-top: 6px; }
 @media (max-width: 760px) {
-    .p3 .section h1.part-title { font-size: 28px; margin-bottom: 26px; }
-    .p3 .section h1.group-title { font-size: 24px; }
+    .p3 .section h1.part-title, .p4 .section h1.part-title { font-size: 28px; margin-bottom: 26px; }
+    .p3 .section h1.group-title, .p4 .section h1.group-title { font-size: 24px; }
     .p3 .section h1:not(.part-title):not(.group-title):not(.title):not(.tldr) { font-size: 21px; }
 }
 
@@ -2437,3 +2438,179 @@ a.dir-link:focus-visible .frame--flip img { transform: rotate(180deg); }
 /* Square anagram in the 4:3 thumbnail: show all of it; the window's black ground fills the sides */
 .dir-thumb .frame--flip { background: #000; }
 .dir-thumb .frame--flip img { object-fit: contain; }
+
+/* ---- project 4 --------------------------------------------------------- */
+
+.matrix-col.placeholder { color: #b6bbc0; }
+
+/* Sized by its first image rather than a fixed ratio, for outputs whose shape
+   changes when their inputs are re-measured. Both images share one size. */
+.compare--natural { aspect-ratio: auto; }
+.compare--natural > .layer:first-child { position: relative; }
+.compare--natural > .layer img { height: auto; }
+
+/* Correspondences: each marker sits on the clicked pixel, in its point's colour,
+   and a line joins each pair across the two photos (drawn by the page script).
+   The "Points" view enlarges the photo around the points by resizing it, not by
+   transforming it, so markers keep their size and stay above the lines. */
+.corr { margin: 20px 0 0; }
+.corr-pair { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.corr-item { min-width: 0; }
+.corr-view { position: relative; }
+.corr-stage { position: relative; }
+.corr-stage img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.corr-stage .image-expand { display: block; }
+/* Only views that zoom clip; elsewhere a marker on the frame edge stays whole. */
+.corr-view--zoom { aspect-ratio: var(--ar); overflow: hidden; border-radius: 10px; background: #000; }
+.corr-view--zoom .corr-stage { position: absolute; top: 0; left: 0; width: 100%; transition: width 360ms ease, left 360ms ease, top 360ms ease; }
+.corr-view--zoom .corr-stage img { border-radius: 0; }
+.corr.is-zoomed .corr-view--zoom .corr-stage {
+    width: calc(var(--zs) * 100%);
+    left: calc(-1 * var(--zs) * var(--zx));
+    top: calc(-1 * var(--zs) * var(--zy));
+}
+
+.corr-pt {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    margin: -9px 0 0 -9px;
+    display: grid;
+    place-items: center;
+    z-index: 2;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    background: var(--c, #1a1a1a);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    cursor: default;
+    transition: transform 140ms ease, opacity 140ms ease;
+}
+.corr-pt--dark { color: #1a1a1a; }
+.corr.has-hot .corr-pt { opacity: 0.4; }
+.corr.has-hot .corr-pt.is-hot { opacity: 1; transform: scale(1.25); z-index: 3; }
+
+.corr-links { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.corr-link line { stroke-linecap: round; }
+.corr-link-halo { stroke: rgba(0, 0, 0, 0.45); stroke-width: 3.5; }
+.corr-link-line { stroke: var(--c); stroke-width: 1.75; }
+.corr-link { transition: opacity 140ms ease; }
+.corr.has-hot .corr-link { opacity: 0.15; }
+.corr.has-hot .corr-link.is-hot { opacity: 1; }
+.corr.has-hot .corr-link.is-hot .corr-link-line { stroke-width: 2.5; }
+
+/* Rectification corners: the clicked quadrilateral, outlined. */
+.corr-quad { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.corr-quad polygon { fill: rgba(72, 138, 243, 0.14); stroke: #fff; stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+
+.corr-item .cell-label { margin-top: 8px; }
+.corr--labels-top .corr-item .cell-label { margin: 0 0 8px; }
+.corr-zoom { justify-content: center; margin-top: 12px; }
+
+/* A.2 system: the appended 1 is picked out where it enters h and where it
+   lands in H. */
+.eq-one { color: var(--accent); }
+.metric-equation.hreshape { margin-top: 18px; }
+.derive math + math { margin-top: 10px; }
+.no-js .corr-zoom { display: none; }
+
+/* [A | b] and H, typeset as bracketed matrices with tabular figures. */
+.hsys { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px 12px; margin: 6px 0 36px; }
+.hsys-row { display: contents; }
+.hsys-name { justify-self: end; font-size: 18px; }
+.bmat-scroll { min-width: 0; overflow-x: auto; padding: 2px 0; }
+.bmat { position: relative; display: inline-block; padding: 3px 10px; vertical-align: middle; }
+.bmat::before,
+.bmat::after { content: ""; position: absolute; top: 0; bottom: 0; width: 6px; border: 1.5px solid #333; }
+.bmat::before { left: 0; border-right: 0; }
+.bmat::after { right: 0; border-left: 0; }
+.bmat table { border-collapse: collapse; font-size: 12.5px; line-height: 1.5; font-variant-numeric: tabular-nums; color: #333; }
+.bmat td { padding: 0 0 0 1.5em; text-align: right; white-space: nowrap; }
+.bmat td:first-child { padding-left: 0; }
+.bmat--aug td:nth-last-child(2) { padding-right: 0.8em; }
+.bmat--aug td:last-child { padding-left: 0.8em; border-left: 1px solid #c8ccd0; }
+.hsys-row:last-child .bmat table { font-size: 14px; }
+
+/* Rectification, left to right: the clicked corners, where they land in the
+   warp, and the warp cropped to the poster. The first two are one .corr figure
+   spanning two of three equal columns. A detail crop follows across the full
+   column, where the interpolation difference shows. */
+.rectify { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; margin: 20px 0 0; }
+.rectify > .corr { grid-column: span 2; margin: 0; }
+.rectify figure { margin: 0; min-width: 0; }
+.rectify-out > .cell-label,
+.detail > .cell-label { margin: 0 0 8px; }
+.detail { margin: 16px 0 0; }
+.rectify .compare-expand { justify-content: center; column-gap: 16px; }
+
+/* Split / See both separately: one control per poster (both its sliders) and
+   per mosaic. */
+.p4 .viewset-controls { justify-content: center; }
+/* The footer's "See all separately" does nothing without JS (every panel shows). */
+.no-js .expand-toggle { visibility: hidden; }
+.viewset-panel > .strip { margin-top: 0; }
+.viewset-panel > .strip--stack { gap: 14px; }
+
+/* Forward warping, before inverse warping is introduced: laid out like the
+   poster rows (corners, warp, crop), then a detail where the holes are plain. */
+.forward-demo { margin: 20px 0 32px; }
+.detail .image-expand,
+.rectify-out > .image-expand { display: block; }
+
+/* Interpolation diagram: one pixel cell, its four pixel centres at the corners,
+   and a sample point between them. Bilinear shades each rectangle in the
+   colour of the corner whose weight it is, and the formula's terms match. */
+.interp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; margin: 24px 0 32px; }
+.interp-panel { min-width: 0; }
+.interp-panel > .cell-label { margin: 0 0 4px; }
+.interp-svg { display: block; width: 100%; max-width: 380px; height: auto; margin: 0 auto; overflow: visible; }
+.interp-svg .icell { fill: none; stroke: #c8ccd0; stroke-width: 1.2; }
+.interp-svg .idash { stroke: #9aa0a6; stroke-width: 1; stroke-dasharray: 4 3; }
+.interp-svg .ipix { fill: #9aa0a6; stroke: #fff; stroke-width: 1.5; }
+.interp-svg .ipix--chosen { fill: var(--accent); }
+.interp-svg .inn-region { fill: var(--accent); fill-opacity: 0.12; }
+.interp-svg .inn-link { stroke: var(--accent); stroke-width: 1.5; }
+.interp-svg .isample { fill: #1a1a1a; stroke: #fff; stroke-width: 1.5; }
+.interp-svg .ilab { font-family: 'Times New Roman', Times, serif; font-size: 15px; fill: #333; }
+.interp-svg .iv { font-style: italic; }
+.interp-svg .isub { font-size: 10px; }
+.interp-eq { overflow-x: auto; padding: 4px 2px; }
+.interp-eq math { font-size: 16px; }
+.interp-eq math + math { margin-top: 4px; }
+.interp-eq--bilinear math:nth-child(2) { padding-left: 3.2em; }
+.interp-eq--bilinear math:last-child { margin-top: 10px; font-size: 15px; color: #555; }
+.iw-00 { color: #1c5cab; }
+.iw-10 { color: #b84a1c; }
+.iw-01 { color: #0f7a52; }
+.iw-11 { color: #4a3aa7; }
+@media (max-width: 640px) { .interp { grid-template-columns: 1fr; } }
+
+.mosaic { max-width: 640px; margin: 24px auto 28px; }
+.mosaic .compare-expand,
+.mosaic .viewset-panel > .strip { margin-bottom: 0; }
+
+@media (max-width: 560px) {
+    .rectify { grid-template-columns: 1fr; }
+    .rectify > .corr { grid-column: auto; }
+    .rectify-out { width: 100%; max-width: 420px; margin-inline: auto; }
+    /* Footer: the view button takes its own row so the name does not wrap. */
+    .p4 .foot--three { grid-template-columns: 1fr auto; row-gap: 14px; }
+    .p4 .foot--three > .expand-toggle { grid-column: 1 / -1; grid-row: 1; justify-self: center; }
+    /* Names above the matrices, so H fits the column without scrolling. */
+    .hsys { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .hsys-name { justify-self: start; font-size: 16px; }
+    .hsys-row + .hsys-row .hsys-name { margin-top: 12px; }
+    .p4 .metric-equation math { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .corr-stage, .corr-pt, .corr-link { transition: none; }
+}
+
+@media print {
+    .corr, .hsys, .rectify, .detail, .mosaic { break-inside: avoid; }
+}

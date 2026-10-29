@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<title>Image Warping and Mosaicing — CS 180 Project 4 — Samarth Mahapatra</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.remove('no-js');</script>
+</head>
+<body class="p4">
+
+<nav class="section-index" aria-label="Sections">
+<ul class="section-index-list">
+<li><a href="index.html" data-heading-level="1">← All projects</a></li>
+<li><a href="#overview" data-heading-level="1">Overview</a></li>
+<li class="index-part"><a href="#part-a" data-heading-level="1">Part A</a></li>
+<li><a href="#a1" data-heading-level="1">A.1 Shooting</a></li>
+<li><a href="#a2" data-heading-level="1">A.2 Homographies</a></li>
+<li><a href="#a3" data-heading-level="1">A.3 Warping</a></li>
+<li><a href="#a4" data-heading-level="1">A.4 Mosaics</a></li>
+<li><a href="#learned" data-heading-level="1">Conclusion</a></li>
+</ul>
+</nav>
+
+<div class="container">
+
+<div class="section base-row title-row">
+<div class="base-col">
+<p class="kicker">CS 180 · Project 4</p>
+<h1 class="title">Image Warping and Mosaicing</h1>
+<p class="meta-line meta-line--subtitle">
+<span class="author-text">Samarth Mahapatra</span>
+</p>
+<p class="image-viewing-note">All images can be clicked on to view them in full resolution</p>
+</div>
+</div>
+
+<div class="section add-top-padding" id="overview">
+<h1 class="group-title">Overview</h1>
+<p>In this project, we will be taking two images that have a projective transform between them. In this case, we fix the COP and rotate the camera to capture two views. Then, using these two images and manually labelled correspondences, we will solve for the homography/transform to make the correspondences line up, warp the images using the recovered homographies, and then blend them so they make a nice-looking mosaic.</p>
+</div>
+
+<div class="section add-top-padding part-start" id="part-a">
+<h1 class="part-title"><span class="part-num">Part A:</span> Image Warping and Mosaicing</h1>
+<h1 class="group-title" id="a1">A.1 Shoot the Pictures</h1>
+<p>I shot three pairs of images, each with a projective transform between them.</p>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:3; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Tahoe</span>
+<span class="matrix-col">Gateway</span>
+<span class="matrix-col">VLSB</span>
+<span class="matrix-row">Image 1</span>
+<div class="cell"><img src="assets/proj04/web/src--tahoe_1.jpg" data-fullres="assets/proj04/src/tahoe_1.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/src--gateway_1.jpg" data-fullres="assets/proj04/src/gateway_1.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/src--vlsb_1.jpg" data-fullres="assets/proj04/src/vlsb_1.jpg" alt="" loading="lazy"></div>
+<span class="matrix-row">Image 2 (reference)</span>
+<div class="cell"><img src="assets/proj04/web/src--tahoe_2.jpg" data-fullres="assets/proj04/src/tahoe_2.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/src--gateway_2.jpg" data-fullres="assets/proj04/src/gateway_2.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/src--vlsb_2.jpg" data-fullres="assets/proj04/src/vlsb_2.jpg" alt="" loading="lazy"></div>
+</div></div>
+</div>
+
+<div class="section add-top-padding" id="a2">
+<h1 class="group-title">A.2 Recover Homographies</h1>
+<p>In this part, we construct a system of equations <math class="inline-math"><mrow><mi>A</mi><mi>h</mi><mo>=</mo><mi>b</mi></mrow></math> to try and solve for the homography <math class="inline-math"><mrow><mi>h</mi></mrow></math>. We can derive the matrix construction through the following:</p>
+<p>If we have <math class="inline-math"><mrow><mi>H</mi></mrow></math> (3×3) and multiply by our point <math class="inline-math"><mrow><mi>p</mi><mo>=</mo><mo stretchy="false">[</mo><mi>x</mi><mspace width="0.35em"/><mi>y</mi><mspace width="0.35em"/><mn>1</mn><mo stretchy="false">]</mo></mrow></math>, we get</p>
+<div class="metric-equation derive" tabindex="0" role="region" aria-label="Projected coordinates">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msub><mi>h</mi><mn>11</mn></msub><mi>x</mi><mo>+</mo><msub><mi>h</mi><mn>12</mn></msub><mi>y</mi><mo>+</mo><msub><mi>h</mi><mn>13</mn></msub></mrow><mrow><msub><mi>h</mi><mn>31</mn></msub><mi>x</mi><mo>+</mo><msub><mi>h</mi><mn>32</mn></msub><mi>y</mi><mo>+</mo><mn>1</mn></mrow></mfrac><mspace width='1.2em'/><mtext>and</mtext><mspace width='1.2em'/><msup><mi>y</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msub><mi>h</mi><mn>21</mn></msub><mi>x</mi><mo>+</mo><msub><mi>h</mi><mn>22</mn></msub><mi>y</mi><mo>+</mo><msub><mi>h</mi><mn>23</mn></msub></mrow><mrow><msub><mi>h</mi><mn>31</mn></msub><mi>x</mi><mo>+</mo><msub><mi>h</mi><mn>32</mn></msub><mi>y</mi><mo>+</mo><mn>1</mn></mrow></mfrac></mrow></math>
+</div>
+<p class="continues">If you multiply by the denominator and move anything with an <math class="inline-math"><mrow><mi>h</mi></mrow></math> term to the left, we get</p>
+<div class="metric-equation derive" tabindex="0" role="region" aria-label="Rearranged, linear in h">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>h</mi><mn>11</mn></msub><mi>x</mi><mo>+</mo><msub><mi>h</mi><mn>12</mn></msub><mi>y</mi><mo>+</mo><msub><mi>h</mi><mn>13</mn></msub><mo>−</mo><msub><mi>h</mi><mn>31</mn></msub><mi>x</mi><msup><mi>x</mi><mo>′</mo></msup><mo>−</mo><msub><mi>h</mi><mn>32</mn></msub><mi>y</mi><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><msup><mi>x</mi><mo>′</mo></msup></mrow></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>h</mi><mn>21</mn></msub><mi>x</mi><mo>+</mo><msub><mi>h</mi><mn>22</mn></msub><mi>y</mi><mo>+</mo><msub><mi>h</mi><mn>23</mn></msub><mo>−</mo><msub><mi>h</mi><mn>31</mn></msub><mi>x</mi><msup><mi>y</mi><mo>′</mo></msup><mo>−</mo><msub><mi>h</mi><mn>32</mn></msub><mi>y</mi><msup><mi>y</mi><mo>′</mo></msup><mo>=</mo><msup><mi>y</mi><mo>′</mo></msup></mrow></math>
+</div>
+<p class="continues">which we can then use as the template for our system below.</p>
+<div class="metric-equation hsystem" tabindex="0" role="region" aria-label="The linear system A h = b, two rows per correspondence">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><munder><mrow><mo>[</mo><mtable><mtr><mtd><msub><mi>x</mi><mn>1</mn></msub></mtd><mtd><msub><mi>y</mi><mn>1</mn></msub></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mrow><mo>−</mo><msub><mi>x</mi><mn>1</mn></msub><msubsup><mi>x</mi><mn>1</mn><mo>′</mo></msubsup></mrow></mtd><mtd><mrow><mo>−</mo><msub><mi>y</mi><mn>1</mn></msub><msubsup><mi>x</mi><mn>1</mn><mo>′</mo></msubsup></mrow></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><msub><mi>x</mi><mn>1</mn></msub></mtd><mtd><msub><mi>y</mi><mn>1</mn></msub></mtd><mtd><mn>1</mn></mtd><mtd><mrow><mo>−</mo><msub><mi>x</mi><mn>1</mn></msub><msubsup><mi>y</mi><mn>1</mn><mo>′</mo></msubsup></mrow></mtd><mtd><mrow><mo>−</mo><msub><mi>y</mi><mn>1</mn></msub><msubsup><mi>y</mi><mn>1</mn><mo>′</mo></msubsup></mrow></mtd></mtr><mtr><mtd><msub><mi>x</mi><mn>2</mn></msub></mtd><mtd><msub><mi>y</mi><mn>2</mn></msub></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mrow><mo>−</mo><msub><mi>x</mi><mn>2</mn></msub><msubsup><mi>x</mi><mn>2</mn><mo>′</mo></msubsup></mrow></mtd><mtd><mrow><mo>−</mo><msub><mi>y</mi><mn>2</mn></msub><msubsup><mi>x</mi><mn>2</mn><mo>′</mo></msubsup></mrow></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><msub><mi>x</mi><mn>2</mn></msub></mtd><mtd><msub><mi>y</mi><mn>2</mn></msub></mtd><mtd><mn>1</mn></mtd><mtd><mrow><mo>−</mo><msub><mi>x</mi><mn>2</mn></msub><msubsup><mi>y</mi><mn>2</mn><mo>′</mo></msubsup></mrow></mtd><mtd><mrow><mo>−</mo><msub><mi>y</mi><mn>2</mn></msub><msubsup><mi>y</mi><mn>2</mn><mo>′</mo></msubsup></mrow></mtd></mtr><mtr><mtd><mo>⋮</mo></mtd><mtd><mo>⋮</mo></mtd><mtd><mo>⋮</mo></mtd><mtd><mo>⋮</mo></mtd><mtd><mo>⋮</mo></mtd><mtd><mo>⋮</mo></mtd><mtd><mo>⋮</mo></mtd><mtd><mo>⋮</mo></mtd></mtr><mtr><mtd><msub><mi>x</mi><mi>n</mi></msub></mtd><mtd><msub><mi>y</mi><mi>n</mi></msub></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mrow><mo>−</mo><msub><mi>x</mi><mi>n</mi></msub><msubsup><mi>x</mi><mi>n</mi><mo>′</mo></msubsup></mrow></mtd><mtd><mrow><mo>−</mo><msub><mi>y</mi><mi>n</mi></msub><msubsup><mi>x</mi><mi>n</mi><mo>′</mo></msubsup></mrow></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><msub><mi>x</mi><mi>n</mi></msub></mtd><mtd><msub><mi>y</mi><mi>n</mi></msub></mtd><mtd><mn>1</mn></mtd><mtd><mrow><mo>−</mo><msub><mi>x</mi><mi>n</mi></msub><msubsup><mi>y</mi><mi>n</mi><mo>′</mo></msubsup></mrow></mtd><mtd><mrow><mo>−</mo><msub><mi>y</mi><mi>n</mi></msub><msubsup><mi>y</mi><mi>n</mi><mo>′</mo></msubsup></mrow></mtd></mtr></mtable><mo>]</mo></mrow><mrow><mspace height="0.9em"/><mi>A</mi><mspace width="0.4em"/><mstyle mathsize="70%" mathcolor="#888"><mtext>2n × 8</mtext></mstyle></mrow></munder><munder><mrow><mo>[</mo><mtable><mtr><mtd><msub><mi>h</mi><mn>11</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>12</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>13</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>21</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>22</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>23</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>31</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>32</mn></msub></mtd></mtr></mtable><mo>]</mo></mrow><mrow><mspace height="0.9em"/><mi>h</mi><mspace width="0.4em"/><mstyle mathsize="70%" mathcolor="#888"><mtext>8 × 1</mtext></mstyle></mrow></munder><mo>=</mo><munder><mrow><mo>[</mo><mtable><mtr><mtd><msubsup><mi>x</mi><mn>1</mn><mo>′</mo></msubsup></mtd></mtr><mtr><mtd><msubsup><mi>y</mi><mn>1</mn><mo>′</mo></msubsup></mtd></mtr><mtr><mtd><msubsup><mi>x</mi><mn>2</mn><mo>′</mo></msubsup></mtd></mtr><mtr><mtd><msubsup><mi>y</mi><mn>2</mn><mo>′</mo></msubsup></mtd></mtr><mtr><mtd><mo>⋮</mo></mtd></mtr><mtr><mtd><msubsup><mi>x</mi><mi>n</mi><mo>′</mo></msubsup></mtd></mtr><mtr><mtd><msubsup><mi>y</mi><mi>n</mi><mo>′</mo></msubsup></mtd></mtr></mtable><mo>]</mo></mrow><mrow><mspace height="0.9em"/><mi>b</mi><mspace width="0.4em"/><mstyle mathsize="70%" mathcolor="#888"><mtext>2n × 1</mtext></mstyle></mrow></munder></mrow><annotation encoding="application/x-tex">\underbrace{\begin{bmatrix} x_1 &amp; y_1 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; -x_1x_1' &amp; -y_1x_1' \\ 0 &amp; 0 &amp; 0 &amp; x_1 &amp; y_1 &amp; 1 &amp; -x_1y_1' &amp; -y_1y_1' \\ x_2 &amp; y_2 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; -x_2x_2' &amp; -y_2x_2' \\ 0 &amp; 0 &amp; 0 &amp; x_2 &amp; y_2 &amp; 1 &amp; -x_2y_2' &amp; -y_2y_2' \\ \vdots \\ x_n &amp; y_n &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; -x_nx_n' &amp; -y_nx_n' \\ 0 &amp; 0 &amp; 0 &amp; x_n &amp; y_n &amp; 1 &amp; -x_ny_n' &amp; -y_ny_n' \end{bmatrix}}_{A} \underbrace{\begin{bmatrix} h_{11} \\ \vdots \\ h_{32} \end{bmatrix}}_{h} = \underbrace{\begin{bmatrix} x_1' \\ y_1' \\ \vdots \\ x_n' \\ y_n' \end{bmatrix}}_{b}</annotation></semantics></math>
+</div>
+<div class="metric-equation hreshape" tabindex="0" role="region" aria-label="h with 1 appended, reshaped into the 3 by 3 homography H">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><munder><mrow><mo>[</mo><mtable><mtr><mtd><mi>h</mi></mtd></mtr><mtr><mtd><mn class="eq-one">1</mn></mtd></mtr></mtable><mo>]</mo></mrow><mrow><mspace height="0.9em"/><mstyle mathsize="70%" mathcolor="#888"><mtext>9 × 1</mtext></mstyle></mrow></munder><mover><mo stretchy="true">⟶</mo><mtext>reshape</mtext></mover><mi>H</mi><mo>=</mo><munder><mrow><mo>[</mo><mtable><mtr><mtd><msub><mi>h</mi><mn>11</mn></msub></mtd><mtd><msub><mi>h</mi><mn>12</mn></msub></mtd><mtd><msub><mi>h</mi><mn>13</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>21</mn></msub></mtd><mtd><msub><mi>h</mi><mn>22</mn></msub></mtd><mtd><msub><mi>h</mi><mn>23</mn></msub></mtd></mtr><mtr><mtd><msub><mi>h</mi><mn>31</mn></msub></mtd><mtd><msub><mi>h</mi><mn>32</mn></msub></mtd><mtd><mn class="eq-one">1</mn></mtd></mtr></mtable><mo>]</mo></mrow><mrow><mspace height="0.9em"/><mstyle mathsize="70%" mathcolor="#888"><mtext>3 × 3</mtext></mstyle></mrow></munder></mrow><annotation encoding="application/x-tex">\begin{bmatrix} h \\ 1 \end{bmatrix} \xrightarrow{\text{reshape}} H = \begin{bmatrix} h_{11} &amp; h_{12} &amp; h_{13} \\ h_{21} &amp; h_{22} &amp; h_{23} \\ h_{31} &amp; h_{32} &amp; 1 \end{bmatrix}</annotation></semantics></math>
+</div>
+<p>We can now take this (usually) overdetermined system and solve it using least squares to obtain <math class="inline-math"><mrow><mi>H</mi></mrow></math>. We can see if the homography makes sense if our mean reprojection error is low, which is the average distance between where the corresponding point was clicked and where the projected point landed.</p>
+
+<h2>Tahoe</h2>
+<!-- gen:corr:tahoe -->
+<figure class="corr is-zoomed">
+<div class="corr-pair">
+<div class="corr-item">
+<div class="corr-view corr-view--zoom" style="--ar:1536 / 2048; --zx:31.491%; --zy:31.528%; --zs:3.6526"><div class="corr-stage">
+<img src="assets/proj04/web/src--tahoe_1--2048.jpg" data-fullres="assets/proj04/src/tahoe_1.jpg" width="1536" height="2048" alt="" loading="lazy">
+<span class="corr-pt" data-i="1" style="left:36.132%; top:42.435%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:37.957%; top:47.999%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:35.678%; top:47.021%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:38.470%; top:47.077%; --c:#eda100">4</span>
+<span class="corr-pt corr-pt--dark" data-i="5" style="left:47.459%; top:46.045%; --c:#e87ba4">5</span>
+<span class="corr-pt" data-i="6" style="left:50.392%; top:45.703%; --c:#008300">6</span>
+<span class="corr-pt" data-i="7" style="left:51.881%; top:47.120%; --c:#6250d6">7</span>
+<span class="corr-pt corr-pt--dark" data-i="8" style="left:54.682%; top:47.069%; --c:#e34948">8</span>
+</div></div>
+<span class="cell-label">Image 1</span>
+</div>
+<div class="corr-item">
+<div class="corr-view corr-view--zoom" style="--ar:1536 / 2048; --zx:50.068%; --zy:31.772%; --zs:3.5636"><div class="corr-stage">
+<img src="assets/proj04/web/src--tahoe_2--2048.jpg" data-fullres="assets/proj04/src/tahoe_2.jpg" width="1536" height="2048" alt="" loading="lazy">
+<span class="corr-pt" data-i="1" style="left:54.883%; top:43.066%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:56.519%; top:48.539%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:54.302%; top:47.566%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:57.030%; top:47.610%; --c:#eda100">4</span>
+<span class="corr-pt corr-pt--dark" data-i="5" style="left:66.140%; top:46.532%; --c:#e87ba4">5</span>
+<span class="corr-pt" data-i="6" style="left:69.231%; top:46.190%; --c:#008300">6</span>
+<span class="corr-pt" data-i="7" style="left:70.833%; top:47.656%; --c:#6250d6">7</span>
+<span class="corr-pt corr-pt--dark" data-i="8" style="left:73.895%; top:47.605%; --c:#e34948">8</span>
+</div></div>
+<span class="cell-label">Image 2 (reference)</span>
+</div>
+</div>
+<div class="corr-zoom stepper-group" role="group" aria-label="View">
+<button type="button" class="viewset-btn" data-view="full" aria-pressed="false">Full frame</button>
+<button type="button" class="viewset-btn is-active" data-view="points" aria-pressed="true">Points</button>
+</div>
+</figure>
+<!-- /gen:corr:tahoe -->
+<!-- gen:stats:tahoe -->
+<p class="exif params"><span>Correspondences <b>8</b></span><span>Mean reprojection error <b>0.17 px</b></span></p>
+<!-- /gen:stats:tahoe -->
+<!-- gen:system:tahoe -->
+<div class="hsys">
+<div class="hsys-row">
+<span class="hsys-name"><math class="inline-math"><mrow><mo>[</mo><mi>A</mi><mo>|</mo><mi>b</mi><mo>]</mo><mo>=</mo></mrow></math></span>
+<div class="bmat-scroll" tabindex="0" role="region" aria-label="[A | b], 16 by 9"><span class="bmat bmat--aug"><table>
+<tr><td>555</td><td>869.1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−467864.3</td><td>−732631.5</td><td>843</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>555</td><td>869.1</td><td>1</td><td>−489503.4</td><td>−766516.3</td><td>882</td></tr>
+<tr><td>583</td><td>983</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−506141.1</td><td>−853389.3</td><td>868.1</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>583</td><td>983</td><td>1</td><td>−579573.3</td><td>−977201</td><td>994.1</td></tr>
+<tr><td>548</td><td>963</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−457085.3</td><td>−803204.6</td><td>834.1</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>548</td><td>963</td><td>1</td><td>−533843.2</td><td>−938086</td><td>974.1</td></tr>
+<tr><td>590.9</td><td>964.1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−517623</td><td>−844567.4</td><td>876</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>590.9</td><td>964.1</td><td>1</td><td>−576167.2</td><td>−940089.7</td><td>975.1</td></tr>
+<tr><td>729</td><td>943</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−740569.1</td><td>−958014.6</td><td>1015.9</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>729</td><td>943</td><td>1</td><td>−694696.3</td><td>−898672.6</td><td>953</td></tr>
+<tr><td>774</td><td>936</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−823085.2</td><td>−995314.8</td><td>1063.4</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>774</td><td>936</td><td>1</td><td>−732206.7</td><td>−885420</td><td>946</td></tr>
+<tr><td>796.9</td><td>965</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−867026</td><td>−1049939.9</td><td>1088</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>796.9</td><td>965</td><td>1</td><td>−777759.8</td><td>−941841.4</td><td>976</td></tr>
+<tr><td>839.9</td><td>964</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−953326</td><td>−1094138</td><td>1135</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>839.9</td><td>964</td><td>1</td><td>−818878.3</td><td>−939831.6</td><td>975</td></tr>
+</table></span></div>
+</div>
+<div class="hsys-row">
+<span class="hsys-name"><math class="inline-math"><mrow><mi>H</mi><mo>=</mo></mrow></math></span>
+<div class="bmat-scroll"><span class="bmat"><table>
+<tr><td>0.623544</td><td>−0.118244</td><td>432.54539</td></tr>
+<tr><td>−0.165297</td><td>0.668706</td><td>217.682685</td></tr>
+<tr><td>−0.000169</td><td>−0.00012</td><td>1</td></tr>
+</table></span></div>
+</div>
+</div>
+<!-- /gen:system:tahoe -->
+
+<h2>Gateway</h2>
+<!-- gen:corr:gateway -->
+<figure class="corr">
+<div class="corr-pair">
+<div class="corr-item">
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/src--gateway_1.jpg" data-fullres="assets/proj04/src/gateway_1.jpg" width="1536" height="2048" alt="" loading="lazy">
+<span class="corr-pt" data-i="1" style="left:48.443%; top:66.938%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:59.549%; top:64.677%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:9.199%; top:28.104%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:16.127%; top:28.223%; --c:#eda100">4</span>
+<span class="corr-pt corr-pt--dark" data-i="5" style="left:47.596%; top:28.937%; --c:#e87ba4">5</span>
+<span class="corr-pt" data-i="6" style="left:28.715%; top:76.141%; --c:#008300">6</span>
+<span class="corr-pt" data-i="7" style="left:26.546%; top:75.308%; --c:#6250d6">7</span>
+<span class="corr-pt corr-pt--dark" data-i="8" style="left:77.162%; top:94.983%; --c:#e34948">8</span>
+</div></div>
+<span class="cell-label">Image 1</span>
+</div>
+<div class="corr-item">
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/src--gateway_2.jpg" data-fullres="assets/proj04/src/gateway_2.jpg" width="1536" height="2048" alt="" loading="lazy">
+<span class="corr-pt" data-i="1" style="left:48.887%; top:51.865%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:59.465%; top:49.802%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:6.364%; top:10.095%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:14.033%; top:10.294%; --c:#eda100">4</span>
+<span class="corr-pt corr-pt--dark" data-i="5" style="left:48.147%; top:11.166%; --c:#e87ba4">5</span>
+<span class="corr-pt" data-i="6" style="left:30.059%; top:59.997%; --c:#008300">6</span>
+<span class="corr-pt" data-i="7" style="left:28.102%; top:59.203%; --c:#6250d6">7</span>
+<span class="corr-pt corr-pt--dark" data-i="8" style="left:74.539%; top:76.776%; --c:#e34948">8</span>
+</div></div>
+<span class="cell-label">Image 2 (reference)</span>
+</div>
+</div>
+</figure>
+<!-- /gen:corr:gateway -->
+<!-- gen:stats:gateway -->
+<p class="exif params"><span>Correspondences <b>8</b></span><span>Mean reprojection error <b>1.56 px</b></span></p>
+<!-- /gen:stats:gateway -->
+<!-- gen:system:gateway -->
+<div class="hsys">
+<div class="hsys-row">
+<span class="hsys-name"><math class="inline-math"><mrow><mo>[</mo><mi>A</mi><mo>|</mo><mi>b</mi><mo>]</mo><mo>=</mo></mrow></math></span>
+<div class="bmat-scroll" tabindex="0" role="region" aria-label="[A | b], 16 by 9"><span class="bmat bmat--aug"><table>
+<tr><td>744.1</td><td>1370.9</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−558737.2</td><td>−1029422.9</td><td>750.9</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>744.1</td><td>1370.9</td><td>1</td><td>−790356.5</td><td>−1456160.5</td><td>1062.2</td></tr>
+<tr><td>914.7</td><td>1324.6</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−835456.8</td><td>−1209866.7</td><td>913.4</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>914.7</td><td>1324.6</td><td>1</td><td>−932927.5</td><td>−1351018.8</td><td>1019.9</td></tr>
+<tr><td>141.3</td><td>575.6</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−13812</td><td>−56265.6</td><td>97.8</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>141.3</td><td>575.6</td><td>1</td><td>−29212.7</td><td>−119003.4</td><td>206.8</td></tr>
+<tr><td>247.7</td><td>578</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−53394.9</td><td>−124591.3</td><td>215.6</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>247.7</td><td>578</td><td>1</td><td>−52222.2</td><td>−121855.1</td><td>210.8</td></tr>
+<tr><td>731.1</td><td>592.6</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−540662</td><td>−438277</td><td>739.5</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>731.1</td><td>592.6</td><td>1</td><td>−167190.5</td><td>−135529.7</td><td>228.7</td></tr>
+<tr><td>441.1</td><td>1559.4</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−203638.9</td><td>−719966.1</td><td>461.7</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>441.1</td><td>1559.4</td><td>1</td><td>−541945.5</td><td>−1916050.4</td><td>1228.7</td></tr>
+<tr><td>407.8</td><td>1542.3</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−176004.3</td><td>−665730.4</td><td>431.6</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>407.8</td><td>1542.3</td><td>1</td><td>−494394.2</td><td>−1870029.2</td><td>1212.5</td></tr>
+<tr><td>1185.2</td><td>1945.3</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−1356958.3</td><td>−2227152.5</td><td>1144.9</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>1185.2</td><td>1945.3</td><td>1</td><td>−1863577.7</td><td>−3058658.3</td><td>1572.4</td></tr>
+</table></span></div>
+</div>
+<div class="hsys-row">
+<span class="hsys-name"><math class="inline-math"><mrow><mi>H</mi><mo>=</mo></mrow></math></span>
+<div class="bmat-scroll"><span class="bmat"><table>
+<tr><td>1.180322</td><td>0.128174</td><td>−131.679056</td></tr>
+<tr><td>−0.001194</td><td>1.356987</td><td>−552.888002</td></tr>
+<tr><td>−0.000021</td><td>0.00018</td><td>1</td></tr>
+</table></span></div>
+</div>
+</div>
+<!-- /gen:system:gateway -->
+
+<h2>VLSB</h2>
+<!-- gen:corr:vlsb -->
+<figure class="corr">
+<div class="corr-pair">
+<div class="corr-item">
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/src--vlsb_1.jpg" data-fullres="assets/proj04/src/vlsb_1.jpg" width="1536" height="2048" alt="" loading="lazy">
+<span class="corr-pt" data-i="1" style="left:23.479%; top:88.160%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:56.535%; top:45.717%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:48.760%; top:33.340%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:48.654%; top:37.505%; --c:#eda100">4</span>
+<span class="corr-pt corr-pt--dark" data-i="5" style="left:47.279%; top:36.712%; --c:#e87ba4">5</span>
+<span class="corr-pt" data-i="6" style="left:58.968%; top:28.898%; --c:#008300">6</span>
+<span class="corr-pt" data-i="7" style="left:39.875%; top:52.341%; --c:#6250d6">7</span>
+<span class="corr-pt corr-pt--dark" data-i="8" style="left:48.760%; top:46.470%; --c:#e34948">8</span>
+</div></div>
+<span class="cell-label">Image 1</span>
+</div>
+<div class="corr-item">
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/src--vlsb_2.jpg" data-fullres="assets/proj04/src/vlsb_2.jpg" width="1536" height="2048" alt="" loading="lazy">
+<span class="corr-pt" data-i="1" style="left:61.634%; top:87.764%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:93.791%; top:44.646%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:84.059%; top:31.793%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:84.006%; top:36.196%; --c:#eda100">4</span>
+<span class="corr-pt corr-pt--dark" data-i="5" style="left:82.472%; top:35.443%; --c:#e87ba4">5</span>
+<span class="corr-pt" data-i="6" style="left:95.695%; top:26.042%; --c:#008300">6</span>
+<span class="corr-pt" data-i="7" style="left:75.015%; top:52.262%; --c:#6250d6">7</span>
+<span class="corr-pt corr-pt--dark" data-i="8" style="left:84.482%; top:45.875%; --c:#e34948">8</span>
+</div></div>
+<span class="cell-label">Image 2 (reference)</span>
+</div>
+</div>
+</figure>
+<!-- /gen:corr:vlsb -->
+<!-- gen:stats:vlsb -->
+<p class="exif params"><span>Correspondences <b>8</b></span><span>Mean reprojection error <b>3.77 px</b></span></p>
+<!-- /gen:stats:vlsb -->
+<!-- gen:system:vlsb -->
+<div class="hsys">
+<div class="hsys-row">
+<span class="hsys-name"><math class="inline-math"><mrow><mo>[</mo><mi>A</mi><mo>|</mo><mi>b</mi><mo>]</mo><mo>=</mo></mrow></math></span>
+<div class="bmat-scroll" tabindex="0" role="region" aria-label="[A | b], 16 by 9"><span class="bmat bmat--aug"><table>
+<tr><td>360.6</td><td>1805.5</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−341411.2</td><td>−1709280.2</td><td>946.7</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>360.6</td><td>1805.5</td><td>1</td><td>−648205.1</td><td>−3245248.3</td><td>1797.4</td></tr>
+<tr><td>868.4</td><td>936.3</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−1250999.9</td><td>−1348819</td><td>1440.6</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>868.4</td><td>936.3</td><td>1</td><td>−793989.1</td><td>−856073.4</td><td>914.3</td></tr>
+<tr><td>749</td><td>682.8</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−967007.9</td><td>−881608.3</td><td>1291.1</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>749</td><td>682.8</td><td>1</td><td>−487664.9</td><td>−444597.6</td><td>651.1</td></tr>
+<tr><td>747.3</td><td>768.1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−964303</td><td>−991119.2</td><td>1290.3</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>747.3</td><td>768.1</td><td>1</td><td>−553996.9</td><td>−569403</td><td>741.3</td></tr>
+<tr><td>726.2</td><td>751.9</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−919939.9</td><td>−952441.1</td><td>1266.8</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>726.2</td><td>751.9</td><td>1</td><td>−527130</td><td>−545753.3</td><td>725.9</td></tr>
+<tr><td>905.7</td><td>591.8</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−1331324.5</td><td>−869904.4</td><td>1469.9</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>905.7</td><td>591.8</td><td>1</td><td>−483062.7</td><td>−315639.3</td><td>533.3</td></tr>
+<tr><td>612.5</td><td>1071.9</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−705708.9</td><td>−1235121.7</td><td>1152.2</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>612.5</td><td>1071.9</td><td>1</td><td>−655541.1</td><td>−1147318.8</td><td>1070.3</td></tr>
+<tr><td>749</td><td>951.7</td><td>1</td><td>0</td><td>0</td><td>0</td><td>−971875.4</td><td>−1234980.6</td><td>1297.6</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>749</td><td>951.7</td><td>1</td><td>−703660</td><td>−894154.2</td><td>939.5</td></tr>
+</table></span></div>
+</div>
+<div class="hsys-row">
+<span class="hsys-name"><math class="inline-math"><mrow><mi>H</mi><mo>=</mo></mrow></math></span>
+<div class="bmat-scroll"><span class="bmat"><table>
+<tr><td>0.60785</td><td>0.020594</td><td>576.499258</td></tr>
+<tr><td>−0.255919</td><td>0.85356</td><td>137.874145</td></tr>
+<tr><td>−0.000234</td><td>−0.000018</td><td>1</td></tr>
+</table></span></div>
+</div>
+</div>
+<!-- /gen:system:vlsb -->
+
+</div>
+
+<div class="section add-top-padding" id="a3">
+<h1 class="group-title">A.3 Warp the Images</h1>
+<p>In order to construct the mosaics, once we obtain the homography, we need a good way to apply it. Here, we can test our algorithms by taking lines that should be axis-aligned with the image but aren’t, and aligning them using a method called rectification. We create a quadrilateral and compute the homography to a predetermined “rectangle” set of corners using the method described above. Now, we can just apply the homography to each pixel to produce our output. <strong>Nope</strong>, it looks terrible since the destinations rarely land on clean integer pixel indices, so we get an image with holes!</p>
+<div class="forward-demo">
+<div class="rectify">
+<!-- gen:forward:poster_1 -->
+<figure class="corr corr--labels-top">
+<div class="corr-pair">
+<div class="corr-item">
+<span class="cell-label">Original</span>
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/src--poster_1.jpg" data-fullres="assets/proj04/src/poster_1.jpg" width="1013" height="2048" alt="" loading="lazy">
+<svg class="corr-quad" viewBox="0 0 1013 2048" preserveAspectRatio="none" aria-hidden="true"><polygon points="343.0,595.2 701.3,123.6 684.6,2046.8 306.4,1631.8"/></svg>
+<span class="corr-pt" data-i="1" style="left:33.861%; top:29.065%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:69.231%; top:6.036%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:67.586%; top:99.940%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:30.242%; top:79.678%; --c:#eda100">4</span>
+</div></div>
+</div>
+<div class="corr-item">
+<span class="cell-label">Forward warped</span>
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/derived--poster_1_forward.jpg" data-fullres="assets/proj04/derived/poster_1_forward.png" width="2807" height="4441" alt="" loading="lazy">
+<svg class="corr-quad" viewBox="0 0 2807 4441" preserveAspectRatio="none" aria-hidden="true"><polygon points="1480.0,1480.0 2466.8,1480.0 2466.8,2960.2 1480.0,2960.2"/></svg>
+<span class="corr-pt" data-i="1" style="left:52.725%; top:33.326%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:87.881%; top:33.326%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:87.881%; top:66.657%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:52.725%; top:66.657%; --c:#eda100">4</span>
+</div></div>
+</div>
+</div>
+</figure>
+<!-- /gen:forward:poster_1 -->
+<figure class="rectify-out">
+<figcaption class="cell-label">Cropped</figcaption>
+<img class="solo-img" src="assets/proj04/web/derived--poster_1_forward_rect.jpg" data-fullres="assets/proj04/derived/poster_1_forward_rect.png" alt="" loading="lazy">
+</figure>
+</div>
+<figure class="detail">
+<figcaption class="cell-label">Forward warped, detail</figcaption>
+<img class="pixel solo-img" src="assets/proj04/web/derived--poster_1_forward_detail.png" data-fullres="assets/proj04/derived/poster_1_forward_detail.png" alt="" loading="lazy">
+</figure>
+</div>
+<p>Instead, we can use inverse warping. We take the inverse of <math class="inline-math"><mrow><mi>H</mi></mrow></math>, and for each destination pixel, we apply the inverse homography to calculate a source pixel. This source pixel also will rarely land cleanly on a pixel index, so we can use a method of using the surrounding pixel values to calculate the source pixel value.</p>
+<figure class="interp">
+<div class="interp-panel">
+<figcaption class="cell-label">Nearest neighbor</figcaption>
+<svg class="interp-svg" viewBox="0 0 380 280" role="img" aria-label="Nearest neighbour: the sample point takes the value of the closest pixel centre"><rect class="icell" x="100" y="60" width="180" height="180"/><rect class="inn-region" x="100" y="150.0" width="90.0" height="90.0"/><line class="idash" x1="190.0" y1="60" x2="190.0" y2="240"/><line class="idash" x1="100" y1="150.0" x2="280" y2="150.0"/><line class="inn-link" x1="163.0" y1="171.6" x2="100" y2="240"/><circle class="ipix" cx="100" cy="60" r="6"/><circle class="ipix" cx="280" cy="60" r="6"/><circle class="ipix" cx="280" cy="240" r="6"/><circle class="ipix ipix--chosen" cx="100" cy="240" r="7"/><text class="ilab" x="90" y="52" text-anchor="end">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">)</tspan></text><text class="ilab" x="290" y="52">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">)</tspan></text><text class="ilab" x="90" y="260" text-anchor="end">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">)</tspan></text><text class="ilab" x="290" y="260">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">)</tspan></text><circle class="isample" cx="163.0" cy="171.6" r="5"/><text class="ilab" x="172.0" y="162.6">(<tspan class="iv">x</tspan>, <tspan class="iv">y</tspan>)</text></svg>
+<div class="interp-eq">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>I</mi><mrow><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><mo>=</mo><mi>I</mi><mrow><mo stretchy="false">(</mo><mi>round</mi><mrow><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mo>,</mo><mi>round</mi><mrow><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><mo stretchy="false">)</mo></mrow></mrow></math>
+</div>
+</div>
+<div class="interp-panel">
+<span class="cell-label">Bilinear</span>
+<svg class="interp-svg" viewBox="0 0 380 280" role="img" aria-label="Bilinear: lines through the sample point split the cell into four rectangles; each corner is weighted by the area of the rectangle opposite it"><rect class="icell" x="100" y="60" width="180" height="180"/><rect x="100.0" y="60.0" width="63.0" height="111.6" fill="#4a3aa7" fill-opacity="0.16"/><rect x="163.0" y="60.0" width="117.0" height="111.6" fill="#0f7a52" fill-opacity="0.16"/><rect x="100.0" y="171.6" width="63.0" height="68.4" fill="#b84a1c" fill-opacity="0.16"/><rect x="163.0" y="171.6" width="117.0" height="68.4" fill="#1c5cab" fill-opacity="0.16"/><line class="idash" x1="163.0" y1="60" x2="163.0" y2="240"/><line class="idash" x1="100" y1="171.6" x2="280" y2="171.6"/><text class="ilab" x="131.5" y="52" text-anchor="middle"><tspan class="iv">a</tspan></text><text class="ilab" x="221.5" y="52" text-anchor="middle">1 − <tspan class="iv">a</tspan></text><text class="ilab" x="90" y="120.8" text-anchor="end"><tspan class="iv">b</tspan></text><text class="ilab" x="90" y="210.8" text-anchor="end">1 − <tspan class="iv">b</tspan></text><circle class="ipix" cx="100" cy="60" r="6" style="fill:#1c5cab"/><circle class="ipix" cx="280" cy="60" r="6" style="fill:#b84a1c"/><circle class="ipix" cx="100" cy="240" r="6" style="fill:#0f7a52"/><circle class="ipix" cx="280" cy="240" r="6" style="fill:#4a3aa7"/><text class="ilab" x="90" y="52" text-anchor="end">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">)</tspan></text><text class="ilab" x="290" y="52">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">)</tspan></text><text class="ilab" x="90" y="260" text-anchor="end">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">0</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">)</tspan></text><text class="ilab" x="290" y="260">(<tspan class="iv">x</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">, </tspan><tspan class="iv">y</tspan><tspan class="isub" dy="4">1</tspan><tspan dy="-4">)</tspan></text><circle class="isample" cx="163.0" cy="171.6" r="5"/><text class="ilab" x="172.0" y="162.6">(<tspan class="iv">x</tspan>, <tspan class="iv">y</tspan>)</text></svg>
+<div class="interp-eq interp-eq--bilinear">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>I</mi><mrow><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><mo>=</mo><mrow class="iw-00"><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>a</mi><mo stretchy="false">)</mo></mrow><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>b</mi><mo stretchy="false">)</mo></mrow><mi>I</mi><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><msub><mi>y</mi><mn>0</mn></msub><mo stretchy="false">)</mo></mrow></mrow><mo>+</mo><mrow class="iw-10"><mi>a</mi><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>b</mi><mo stretchy="false">)</mo></mrow><mi>I</mi><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><msub><mi>y</mi><mn>0</mn></msub><mo stretchy="false">)</mo></mrow></mrow></mrow></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mo form="infix">+</mo><mrow class="iw-01"><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>a</mi><mo stretchy="false">)</mo></mrow><mi>b</mi><mi>I</mi><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><msub><mi>y</mi><mn>1</mn></msub><mo stretchy="false">)</mo></mrow></mrow><mo>+</mo><mrow class="iw-11"><mi>a</mi><mi>b</mi><mi>I</mi><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><msub><mi>y</mi><mn>1</mn></msub><mo stretchy="false">)</mo></mrow></mrow></mrow></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>x</mi><mn>0</mn></msub><mo>=</mo><mrow><mo stretchy='false'>⌊</mo><mi>x</mi><mo stretchy='false'>⌋</mo></mrow><mo>,</mo><mspace width='0.6em'/><msub><mi>y</mi><mn>0</mn></msub><mo>=</mo><mrow><mo stretchy='false'>⌊</mo><mi>y</mi><mo stretchy='false'>⌋</mo></mrow><mo>,</mo><mspace width='0.6em'/><mi>a</mi><mo>=</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><mspace width='0.6em'/><mi>b</mi><mo>=</mo><mi>y</mi><mo>−</mo><msub><mi>y</mi><mn>0</mn></msub></mrow></math>
+</div>
+</div>
+</figure>
+
+<h2>Depeche Mode</h2>
+<div class="viewset">
+<div class="viewset-controls" role="group" aria-label="Comparison view">
+<button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+<button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+</div>
+<div class="rectify">
+<!-- gen:corners:poster_1 -->
+<figure class="corr corr--labels-top">
+<div class="corr-pair">
+<div class="corr-item">
+<span class="cell-label">Original</span>
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/src--poster_1.jpg" data-fullres="assets/proj04/src/poster_1.jpg" width="1013" height="2048" alt="" loading="lazy">
+<svg class="corr-quad" viewBox="0 0 1013 2048" preserveAspectRatio="none" aria-hidden="true"><polygon points="343.0,595.2 701.3,123.6 684.6,2046.8 306.4,1631.8"/></svg>
+<span class="corr-pt" data-i="1" style="left:33.861%; top:29.065%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:69.231%; top:6.036%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:67.586%; top:99.940%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:30.242%; top:79.678%; --c:#eda100">4</span>
+</div></div>
+</div>
+<div class="corr-item">
+<span class="cell-label">Warped</span>
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/out--a3--poster_1_bilinear.jpg" data-fullres="assets/proj04/out/a3/poster_1_bilinear.jpg" width="2807" height="4441" alt="" loading="lazy">
+<svg class="corr-quad" viewBox="0 0 2807 4441" preserveAspectRatio="none" aria-hidden="true"><polygon points="1480.0,1480.0 2466.8,1480.0 2466.8,2960.2 1480.0,2960.2"/></svg>
+<span class="corr-pt" data-i="1" style="left:52.725%; top:33.326%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:87.881%; top:33.326%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:87.881%; top:66.657%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:52.725%; top:66.657%; --c:#eda100">4</span>
+</div></div>
+</div>
+</div>
+</figure>
+<!-- /gen:corners:poster_1 -->
+<figure class="rectify-out">
+<figcaption class="cell-label">Cropped</figcaption>
+<div class="viewset-panel" data-panel="split">
+<div class="compare compare--natural">
+<div class="layer"><img src="assets/proj04/web/derived--poster_1_nn_rect.jpg" data-fullres="assets/proj04/derived/poster_1_nn_rect.jpg" alt="" loading="lazy"></div>
+<div class="layer layer-top"><img src="assets/proj04/web/derived--poster_1_bilinear_rect.jpg" data-fullres="assets/proj04/derived/poster_1_bilinear_rect.jpg" alt="" loading="lazy"></div>
+<span class="compare-label compare-label--a">Nearest neighbor</span>
+<span class="compare-label compare-label--b">Bilinear</span>
+<div class="compare-divider" aria-hidden="true"></div>
+<input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare nearest-neighbor and bilinear rectification">
+</div>
+</div>
+<div class="viewset-panel" data-panel="pair">
+<div class="strip strip--stack">
+<figure class="strip-item"><img src="assets/proj04/web/derived--poster_1_nn_rect.jpg" data-fullres="assets/proj04/derived/poster_1_nn_rect.jpg" alt="" loading="lazy"><figcaption class="cell-label">Nearest neighbor</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj04/web/derived--poster_1_bilinear_rect.jpg" data-fullres="assets/proj04/derived/poster_1_bilinear_rect.jpg" alt="" loading="lazy"><figcaption class="cell-label">Bilinear</figcaption></figure>
+</div>
+</div>
+</figure>
+</div>
+<figure class="detail">
+<figcaption class="cell-label">Detail</figcaption>
+<div class="viewset-panel" data-panel="split">
+<div class="compare" style="aspect-ratio: 2 / 1">
+<div class="layer"><img class="pixel" src="assets/proj04/web/derived--poster_1_nn_detail.png" data-fullres="assets/proj04/derived/poster_1_nn_detail.png" alt="" loading="lazy"></div>
+<div class="layer layer-top"><img class="pixel" src="assets/proj04/web/derived--poster_1_bilinear_detail.png" data-fullres="assets/proj04/derived/poster_1_bilinear_detail.png" alt="" loading="lazy"></div>
+<span class="compare-label compare-label--a">Nearest neighbor</span>
+<span class="compare-label compare-label--b">Bilinear</span>
+<div class="compare-divider" aria-hidden="true"></div>
+<input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare nearest-neighbor and bilinear detail">
+</div>
+</div>
+<div class="viewset-panel" data-panel="pair">
+<div class="strip strip--stack">
+<figure class="strip-item"><img class="pixel" src="assets/proj04/web/derived--poster_1_nn_detail.png" data-fullres="assets/proj04/derived/poster_1_nn_detail.png" alt="" loading="lazy"><figcaption class="cell-label">Nearest neighbor</figcaption></figure>
+<figure class="strip-item"><img class="pixel" src="assets/proj04/web/derived--poster_1_bilinear_detail.png" data-fullres="assets/proj04/derived/poster_1_bilinear_detail.png" alt="" loading="lazy"><figcaption class="cell-label">Bilinear</figcaption></figure>
+</div>
+</div>
+</figure>
+</div>
+<!-- gen:timing:poster_1 -->
+<p class="exif params"><span>Warped output <b>2807 × 4441 px</b></span><span>Nearest neighbor <b>0.331 s</b></span><span>Bilinear <b>0.761 s</b></span></p>
+<!-- /gen:timing:poster_1 -->
+
+<h2>Led Zeppelin</h2>
+<div class="viewset">
+<div class="viewset-controls" role="group" aria-label="Comparison view">
+<button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+<button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+</div>
+<div class="rectify">
+<!-- gen:corners:poster_2 -->
+<figure class="corr corr--labels-top">
+<div class="corr-pair">
+<div class="corr-item">
+<span class="cell-label">Original</span>
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/src--poster_2.jpg" data-fullres="assets/proj04/src/poster_2.jpg" width="1536" height="2048" alt="" loading="lazy">
+<svg class="corr-quad" viewBox="0 0 1536 2048" preserveAspectRatio="none" aria-hidden="true"><polygon points="38.9,732.8 1501.8,679.6 1258.6,1868.9 422.7,1846.1"/></svg>
+<span class="corr-pt" data-i="1" style="left:2.534%; top:35.783%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:97.772%; top:33.185%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:81.940%; top:91.256%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:27.518%; top:90.143%; --c:#eda100">4</span>
+</div></div>
+</div>
+<div class="corr-item">
+<span class="cell-label">Warped</span>
+<div class="corr-view"><div class="corr-stage">
+<img src="assets/proj04/web/out--a3--poster_2_bilinear.jpg" data-fullres="assets/proj04/out/a3/poster_2_bilinear.jpg" width="1709" height="2026" alt="" loading="lazy">
+<svg class="corr-quad" viewBox="0 0 1709 2026" preserveAspectRatio="none" aria-hidden="true"><polygon points="597.0,351.0 1394.2,351.0 1394.2,1546.7 597.0,1546.7"/></svg>
+<span class="corr-pt" data-i="1" style="left:34.933%; top:17.325%; --c:#2a78d6">1</span>
+<span class="corr-pt corr-pt--dark" data-i="2" style="left:81.581%; top:17.325%; --c:#eb6834">2</span>
+<span class="corr-pt corr-pt--dark" data-i="3" style="left:81.581%; top:76.344%; --c:#1baf7a">3</span>
+<span class="corr-pt corr-pt--dark" data-i="4" style="left:34.933%; top:76.344%; --c:#eda100">4</span>
+</div></div>
+</div>
+</div>
+</figure>
+<!-- /gen:corners:poster_2 -->
+<figure class="rectify-out">
+<figcaption class="cell-label">Cropped</figcaption>
+<div class="viewset-panel" data-panel="split">
+<div class="compare compare--natural">
+<div class="layer"><img src="assets/proj04/web/derived--poster_2_nn_rect.jpg" data-fullres="assets/proj04/derived/poster_2_nn_rect.jpg" alt="" loading="lazy"></div>
+<div class="layer layer-top"><img src="assets/proj04/web/derived--poster_2_bilinear_rect.jpg" data-fullres="assets/proj04/derived/poster_2_bilinear_rect.jpg" alt="" loading="lazy"></div>
+<span class="compare-label compare-label--a">Nearest neighbor</span>
+<span class="compare-label compare-label--b">Bilinear</span>
+<div class="compare-divider" aria-hidden="true"></div>
+<input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare nearest-neighbor and bilinear rectification">
+</div>
+</div>
+<div class="viewset-panel" data-panel="pair">
+<div class="strip strip--stack">
+<figure class="strip-item"><img src="assets/proj04/web/derived--poster_2_nn_rect.jpg" data-fullres="assets/proj04/derived/poster_2_nn_rect.jpg" alt="" loading="lazy"><figcaption class="cell-label">Nearest neighbor</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj04/web/derived--poster_2_bilinear_rect.jpg" data-fullres="assets/proj04/derived/poster_2_bilinear_rect.jpg" alt="" loading="lazy"><figcaption class="cell-label">Bilinear</figcaption></figure>
+</div>
+</div>
+</figure>
+</div>
+<figure class="detail">
+<figcaption class="cell-label">Detail</figcaption>
+<div class="viewset-panel" data-panel="split">
+<div class="compare" style="aspect-ratio: 2 / 1">
+<div class="layer"><img class="pixel" src="assets/proj04/web/derived--poster_2_nn_detail.png" data-fullres="assets/proj04/derived/poster_2_nn_detail.png" alt="" loading="lazy"></div>
+<div class="layer layer-top"><img class="pixel" src="assets/proj04/web/derived--poster_2_bilinear_detail.png" data-fullres="assets/proj04/derived/poster_2_bilinear_detail.png" alt="" loading="lazy"></div>
+<span class="compare-label compare-label--a">Nearest neighbor</span>
+<span class="compare-label compare-label--b">Bilinear</span>
+<div class="compare-divider" aria-hidden="true"></div>
+<input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare nearest-neighbor and bilinear detail">
+</div>
+</div>
+<div class="viewset-panel" data-panel="pair">
+<div class="strip strip--stack">
+<figure class="strip-item"><img class="pixel" src="assets/proj04/web/derived--poster_2_nn_detail.png" data-fullres="assets/proj04/derived/poster_2_nn_detail.png" alt="" loading="lazy"><figcaption class="cell-label">Nearest neighbor</figcaption></figure>
+<figure class="strip-item"><img class="pixel" src="assets/proj04/web/derived--poster_2_bilinear_detail.png" data-fullres="assets/proj04/derived/poster_2_bilinear_detail.png" alt="" loading="lazy"><figcaption class="cell-label">Bilinear</figcaption></figure>
+</div>
+</div>
+</figure>
+</div>
+<!-- gen:timing:poster_2 -->
+<p class="exif params"><span>Warped output <b>1709 × 2026 px</b></span><span>Nearest neighbor <b>0.115 s</b></span><span>Bilinear <b>0.235 s</b></span></p>
+<!-- /gen:timing:poster_2 -->
+
+<p>Using an inverse warping method with interpolation produces much cleaner results than forward warping. The two interpolation methods tested have tradeoffs. Nearest neighbors works almost 2× as fast but produces aliasing-like artifacts where edges become jaggedy, causing things like text to not look good. Bilinear interpolation solves this problem by blending the surrounding pixels evenly, creating a smoother look.</p>
+</div>
+
+<div class="section add-top-padding" id="a4">
+<h1 class="group-title">A.4 Blend the Images into a Mosaic</h1>
+<p>We have a way to reliably calculate a homography between two images and nicely warp them using a homography. Now, we need to find a way to construct a mosaic of the two. First, we calculate the homography. One of the images is warped using inverse warping + bilinear interpolation. We now need to put the two images on some shared canvas. We pass the corners of one image through <math class="inline-math"><mrow><mi>H</mi></mrow></math> to obtain its warped coordinates and then construct the smallest possible bounding box that contains the unwarped image’s corners and the warped image’s corners. We now have two ways to blend the images.</p>
+<p><strong>Feathering:</strong> We calculate the distance between each pixel and its nearest pixel with the image data and then normalize with the maximum. This gives us weight of 1 close to the center of the image and smaller and smaller weights as we go to the edges. Then, using these weights at each pixel <math class="inline-math"><mrow><mi>i</mi><mi>j</mi></mrow></math>, we calculate</p>
+<div class="metric-equation" tabindex="0" role="region" aria-label="Feathered pixel value">
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mfrac><mrow><msub><mi>w</mi><mrow><mn>1</mn><mo>,</mo><mi>i</mi><mi>j</mi></mrow></msub><mo>⋅</mo><msub><mi>im</mi><mrow><mn>1</mn><mo>,</mo><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>w</mi><mrow><mn>2</mn><mo>,</mo><mi>i</mi><mi>j</mi></mrow></msub><mo>⋅</mo><msub><mi>im</mi><mrow><mn>2</mn><mo>,</mo><mi>i</mi><mi>j</mi></mrow></msub></mrow><mrow><msub><mi>w</mi><mrow><mn>1</mn><mo>,</mo><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mi>w</mi><mrow><mn>2</mn><mo>,</mo><mi>i</mi><mi>j</mi></mrow></msub></mrow></mfrac></mrow></math>
+</div>
+<p class="continues">If there’s no overlap at <math class="inline-math"><mrow><mi>i</mi><mi>j</mi></mrow></math>, then we get only that pixel fully expressed, and then at places of intersection, it smoothly interpolates between the two images.</p>
+<p>This is problematic because small errors in your homography (propagated through human error when labelling correspondences or the two images not having a true projective transform) can cause double ghosting of fine details (as evidenced in the Tahoe images).</p>
+<p>Instead, we can use a two-band Laplacian pyramid to blend the high and low frequencies differently.</p>
+<p><strong>Two-Band Blending:</strong> First, we Gaussian blur the images to obtain the low band, which contains color and broad shapes. For low-band pixels, we use the same feathering technique as above. But for the high band, we pick the pixel which has the higher weight instead of interpolating it. Since fine detail is never averaged, there’s no ghosting, so it’s much harder to see any artifacts.</p>
+
+<h2>Tahoe</h2>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:3; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Source</span>
+<span class="matrix-col">Warped</span>
+<span class="matrix-col">Blend weight</span>
+<span class="matrix-row">Image 1</span>
+<div class="cell"><img src="assets/proj04/web/src--tahoe_1.jpg" data-fullres="assets/proj04/src/tahoe_1.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--tahoe_tahoe_1_warped.jpg" data-fullres="assets/proj04/out/a4/tahoe_tahoe_1_warped.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--tahoe_tahoe_1_weight.jpg" data-fullres="assets/proj04/out/a4/tahoe_tahoe_1_weight.jpg" alt="" loading="lazy"></div>
+<span class="matrix-row">Image 2 (reference)</span>
+<div class="cell"><img src="assets/proj04/web/src--tahoe_2.jpg" data-fullres="assets/proj04/src/tahoe_2.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--tahoe_tahoe_2_warped.jpg" data-fullres="assets/proj04/out/a4/tahoe_tahoe_2_warped.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--tahoe_tahoe_2_weight.jpg" data-fullres="assets/proj04/out/a4/tahoe_tahoe_2_weight.jpg" alt="" loading="lazy"></div>
+</div></div>
+<figure class="mosaic viewset">
+<div class="viewset-controls" role="group" aria-label="Comparison view">
+<button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+<button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+</div>
+<div class="viewset-panel" data-panel="split">
+<div class="compare compare--natural">
+<div class="layer"><img src="assets/proj04/web/out--a4--tahoe_feathered.jpg" data-fullres="assets/proj04/out/a4/tahoe_feathered.jpg" alt="" loading="lazy"></div>
+<div class="layer layer-top"><img src="assets/proj04/web/out--a4--tahoe_two_band.jpg" data-fullres="assets/proj04/out/a4/tahoe_two_band.jpg" alt="" loading="lazy"></div>
+<span class="compare-label compare-label--a">Feathered</span>
+<span class="compare-label compare-label--b">Two-band</span>
+<div class="compare-divider" aria-hidden="true"></div>
+<input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare the feathered and two-band mosaics">
+</div>
+</div>
+<div class="viewset-panel" data-panel="pair">
+<div class="strip strip--pair">
+<figure class="strip-item"><img src="assets/proj04/web/out--a4--tahoe_feathered.jpg" data-fullres="assets/proj04/out/a4/tahoe_feathered.jpg" alt="" loading="lazy"><figcaption class="cell-label">Feathered</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj04/web/out--a4--tahoe_two_band.jpg" data-fullres="assets/proj04/out/a4/tahoe_two_band.jpg" alt="" loading="lazy"><figcaption class="cell-label">Two-band</figcaption></figure>
+</div>
+</div>
+</figure>
+
+<h2>Gateway</h2>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:3; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Source</span>
+<span class="matrix-col">Warped</span>
+<span class="matrix-col">Blend weight</span>
+<span class="matrix-row">Image 1</span>
+<div class="cell"><img src="assets/proj04/web/src--gateway_1.jpg" data-fullres="assets/proj04/src/gateway_1.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--gateway_gateway_1_warped.jpg" data-fullres="assets/proj04/out/a4/gateway_gateway_1_warped.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--gateway_gateway_1_weight.jpg" data-fullres="assets/proj04/out/a4/gateway_gateway_1_weight.jpg" alt="" loading="lazy"></div>
+<span class="matrix-row">Image 2 (reference)</span>
+<div class="cell"><img src="assets/proj04/web/src--gateway_2.jpg" data-fullres="assets/proj04/src/gateway_2.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--gateway_gateway_2_warped.jpg" data-fullres="assets/proj04/out/a4/gateway_gateway_2_warped.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--gateway_gateway_2_weight.jpg" data-fullres="assets/proj04/out/a4/gateway_gateway_2_weight.jpg" alt="" loading="lazy"></div>
+</div></div>
+<figure class="mosaic viewset">
+<div class="viewset-controls" role="group" aria-label="Comparison view">
+<button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+<button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+</div>
+<div class="viewset-panel" data-panel="split">
+<div class="compare compare--natural">
+<div class="layer"><img src="assets/proj04/web/out--a4--gateway_feathered.jpg" data-fullres="assets/proj04/out/a4/gateway_feathered.jpg" alt="" loading="lazy"></div>
+<div class="layer layer-top"><img src="assets/proj04/web/out--a4--gateway_two_band.jpg" data-fullres="assets/proj04/out/a4/gateway_two_band.jpg" alt="" loading="lazy"></div>
+<span class="compare-label compare-label--a">Feathered</span>
+<span class="compare-label compare-label--b">Two-band</span>
+<div class="compare-divider" aria-hidden="true"></div>
+<input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare the feathered and two-band mosaics">
+</div>
+</div>
+<div class="viewset-panel" data-panel="pair">
+<div class="strip strip--pair">
+<figure class="strip-item"><img src="assets/proj04/web/out--a4--gateway_feathered.jpg" data-fullres="assets/proj04/out/a4/gateway_feathered.jpg" alt="" loading="lazy"><figcaption class="cell-label">Feathered</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj04/web/out--a4--gateway_two_band.jpg" data-fullres="assets/proj04/out/a4/gateway_two_band.jpg" alt="" loading="lazy"><figcaption class="cell-label">Two-band</figcaption></figure>
+</div>
+</div>
+</figure>
+
+<h2>VLSB</h2>
+<div class="matrix-scroll"><div class="matrix matrix--labelled" style="--cols:3; --min-cell:110px">
+<span class="matrix-corner"></span>
+<span class="matrix-col">Source</span>
+<span class="matrix-col">Warped</span>
+<span class="matrix-col">Blend weight</span>
+<span class="matrix-row">Image 1</span>
+<div class="cell"><img src="assets/proj04/web/src--vlsb_1.jpg" data-fullres="assets/proj04/src/vlsb_1.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--vlsb_vlsb_1_warped.jpg" data-fullres="assets/proj04/out/a4/vlsb_vlsb_1_warped.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--vlsb_vlsb_1_weight.jpg" data-fullres="assets/proj04/out/a4/vlsb_vlsb_1_weight.jpg" alt="" loading="lazy"></div>
+<span class="matrix-row">Image 2 (reference)</span>
+<div class="cell"><img src="assets/proj04/web/src--vlsb_2.jpg" data-fullres="assets/proj04/src/vlsb_2.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--vlsb_vlsb_2_warped.jpg" data-fullres="assets/proj04/out/a4/vlsb_vlsb_2_warped.jpg" alt="" loading="lazy"></div>
+<div class="cell"><img src="assets/proj04/web/out--a4--vlsb_vlsb_2_weight.jpg" data-fullres="assets/proj04/out/a4/vlsb_vlsb_2_weight.jpg" alt="" loading="lazy"></div>
+</div></div>
+<figure class="mosaic viewset">
+<div class="viewset-controls" role="group" aria-label="Comparison view">
+<button type="button" class="viewset-btn is-active" data-view="split" aria-pressed="true">Split</button>
+<button type="button" class="viewset-btn" data-view="pair" aria-pressed="false">See both separately</button>
+</div>
+<div class="viewset-panel" data-panel="split">
+<div class="compare compare--natural">
+<div class="layer"><img src="assets/proj04/web/out--a4--vlsb_feathered.jpg" data-fullres="assets/proj04/out/a4/vlsb_feathered.jpg" alt="" loading="lazy"></div>
+<div class="layer layer-top"><img src="assets/proj04/web/out--a4--vlsb_two_band.jpg" data-fullres="assets/proj04/out/a4/vlsb_two_band.jpg" alt="" loading="lazy"></div>
+<span class="compare-label compare-label--a">Feathered</span>
+<span class="compare-label compare-label--b">Two-band</span>
+<div class="compare-divider" aria-hidden="true"></div>
+<input type="range" min="0" max="100" step="0.1" value="50" aria-label="Compare the feathered and two-band mosaics">
+</div>
+</div>
+<div class="viewset-panel" data-panel="pair">
+<div class="strip strip--pair">
+<figure class="strip-item"><img src="assets/proj04/web/out--a4--vlsb_feathered.jpg" data-fullres="assets/proj04/out/a4/vlsb_feathered.jpg" alt="" loading="lazy"><figcaption class="cell-label">Feathered</figcaption></figure>
+<figure class="strip-item"><img src="assets/proj04/web/out--a4--vlsb_two_band.jpg" data-fullres="assets/proj04/out/a4/vlsb_two_band.jpg" alt="" loading="lazy"><figcaption class="cell-label">Two-band</figcaption></figure>
+</div>
+</div>
+</figure>
+
+<p>Using the two-band blending really helps remove any sort of ghosting at high-frequency details and produces an overall smoother image.</p>
+</div>
+
+<div class="section add-top-padding" id="learned">
+<h1 class="group-title">Conclusion</h1>
+<p>This project gave me really good intuition for how to take two different viewpoints of a scene and bring them together to create one coherent image. I learned first how to capture two images that are well suited for composition, how to calculate the transform between them, then how to elegantly apply that transform, and finally cleanly blend the warped images to make a nice mosaic.</p>
+</div>
+
+<footer class="foot foot--three">
+<a href="index.html">← All projects</a>
+<button type="button" class="viewset-btn expand-toggle" aria-pressed="false">See all separately</button>
+<span>Samarth Mahapatra · CS 180</span>
+</footer>
+
+</div>
+
+<dialog class="image-viewer" aria-label="Full-resolution image">
+  <div class="image-viewer-bar">
+    <a class="image-viewer-original" target="_blank" rel="noopener">Open original ↗</a>
+    <button class="image-viewer-close" type="button" autofocus aria-label="Close image viewer">Close ×</button>
+  </div>
+  <div class="image-viewer-stage">
+    <img class="image-viewer-image" alt="">
+  </div>
+  <p class="image-viewer-status" role="status" aria-live="polite"></p>
+</dialog>
+
+<script>
+// Keep web-sized previews in the page; load the original only when opened.
+(function () {
+  var viewer = document.querySelector('.image-viewer');
+  var image = viewer.querySelector('.image-viewer-image');
+  var original = viewer.querySelector('.image-viewer-original');
+  var status = viewer.querySelector('.image-viewer-status');
+  var trigger;
+
+  function wire(link, resolve) {
+    var first = resolve();
+    link.setAttribute('href', first.dataset.fullres);
+    if (!link.textContent) link.setAttribute('aria-label', 'Expand image');
+    if (typeof viewer.showModal !== 'function') return;
+    link.setAttribute('aria-haspopup', 'dialog');
+    link.addEventListener('click', function (event) {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      var source = resolve();
+      trigger = link;
+      status.textContent = 'Loading full-resolution image…';
+      image.hidden = true;
+      image.alt = source.getAttribute('alt') || '';
+      image.onload = function () { image.hidden = false; status.textContent = ''; };
+      image.onerror = function () { status.textContent = 'Could not load this image. Try opening the original.'; };
+      original.href = source.dataset.fullres;
+      image.src = source.dataset.fullres;
+      viewer.showModal();
+      document.documentElement.classList.add('image-viewer-open');
+    });
+  }
+
+  document.querySelectorAll('img[data-fullres]').forEach(function (source) {
+    // The comparison range covers both layers; give each its own expand link.
+    if (source.closest('.compare')) return;
+    var link = document.createElement('a');
+    link.classList.add('image-expand');
+    source.parentNode.insertBefore(link, source);
+    link.appendChild(source);
+    wire(link, function () { return source; });
+  });
+
+  document.querySelectorAll('.compare').forEach(function (compare) {
+    var controls = document.createElement('div');
+    controls.className = 'compare-expand';
+    var labels = compare.querySelectorAll('.compare-label');
+    compare.querySelectorAll(':scope > .layer').forEach(function (layer, i) {
+      var link = document.createElement('a');
+      link.textContent = 'Expand ' + (labels[i] ? labels[i].textContent : 'image');
+      wire(link, function () { return layer.querySelector('img[data-fullres]'); });
+      controls.appendChild(link);
+    });
+    compare.insertAdjacentElement('afterend', controls);
+  });
+
+  viewer.querySelector('.image-viewer-close').addEventListener('click', function () { viewer.close(); });
+  viewer.addEventListener('click', function (event) {
+    if (event.target === viewer || event.target === viewer.querySelector('.image-viewer-stage')) viewer.close();
+  });
+  viewer.addEventListener('close', function () {
+    document.documentElement.classList.remove('image-viewer-open');
+    image.onload = image.onerror = null;
+    image.removeAttribute('src');
+    if (trigger) trigger.focus({ preventScroll: true });
+  });
+})();
+
+// Drag-to-compare. The control is a range input, so keyboard and touch work
+// without extra handling; the thumb is transparent and the divider is visible.
+document.querySelectorAll('.compare').forEach(function (el) {
+  var input = el.querySelector('input[type="range"]');
+  if (!input) return;
+  var sync = function () { el.style.setProperty('--pos', input.value + '%'); };
+  input.addEventListener('input', sync);
+  sync();
+});
+
+// Figure view toggle: split comparison, or the two images on their own.
+// Panels start visible so the page still shows everything without JS.
+var viewsets = [];
+document.querySelectorAll('.viewset').forEach(function (set) {
+  var btns = set.querySelectorAll('.viewset-btn');
+  var panels = set.querySelectorAll('.viewset-panel');
+  var show = function (view) {
+    panels.forEach(function (p) { p.hidden = p.dataset.panel !== view; });
+    btns.forEach(function (b) {
+      var on = b.dataset.view === view;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { show(b.dataset.view); });
+  });
+  show('split');
+  viewsets.push(show);
+});
+
+// Footer control: every comparison on the page as separate images at once.
+// Printing does the same, then puts the page back.
+(function () {
+  var btn = document.querySelector('.expand-toggle');
+  var on = false, before = false;
+  function apply(state) {
+    on = state;
+    viewsets.forEach(function (show) { show(on ? 'pair' : 'split'); });
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = on ? 'Back to sliders' : 'See all separately';
+  }
+  btn.addEventListener('click', function () { apply(!on); });
+  window.addEventListener('beforeprint', function () { before = on; apply(true); });
+  window.addEventListener('afterprint', function () { apply(before); });
+})();
+
+// Correspondences. A line joins each pair of points across the two photos; it is
+// measured from the markers on screen, so it follows resizing and the zoom.
+// Pointing at a marker picks out its partner and their line.
+document.querySelectorAll('.corr').forEach(function (fig) {
+  var pair = fig.querySelector('.corr-pair');
+  var views = pair.querySelectorAll('.corr-view');
+  var pts = fig.querySelectorAll('.corr-pt');
+  var links = [];
+
+  if (views.length === 2) {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'corr-links');
+    svg.setAttribute('aria-hidden', 'true');
+    var a = views[0].querySelectorAll('.corr-pt'), b = views[1].querySelectorAll('.corr-pt');
+    for (var i = 0; i < Math.min(a.length, b.length); i++) {
+      var g = document.createElementNS(ns, 'g');
+      g.setAttribute('class', 'corr-link');
+      g.setAttribute('data-i', a[i].dataset.i);
+      g.style.setProperty('--c', a[i].style.getPropertyValue('--c'));
+      ['corr-link-halo', 'corr-link-line'].forEach(function (cls) {
+        var line = document.createElementNS(ns, 'line');
+        line.setAttribute('class', cls);
+        g.appendChild(line);
+      });
+      svg.appendChild(g);
+      links.push({ el: g, a: a[i], b: b[i] });
+    }
+    pair.appendChild(svg);
+  }
+
+  var draw = function () {
+    var box = pair.getBoundingClientRect();
+    links.forEach(function (l) {
+      var p = l.a.getBoundingClientRect(), q = l.b.getBoundingClientRect();
+      var c = [p.left + p.width / 2 - box.left, p.top + p.height / 2 - box.top,
+               q.left + q.width / 2 - box.left, q.top + q.height / 2 - box.top];
+      l.el.querySelectorAll('line').forEach(function (line) {
+        line.setAttribute('x1', c[0]); line.setAttribute('y1', c[1]);
+        line.setAttribute('x2', c[2]); line.setAttribute('y2', c[3]);
+      });
+    });
+  };
+  // Redraw every frame while the zoom animates.
+  var follow = function (ms) {
+    var until = performance.now() + ms;
+    (function step() { draw(); if (performance.now() < until) requestAnimationFrame(step); })();
+  };
+  if (links.length) {
+    if ('ResizeObserver' in window) new ResizeObserver(draw).observe(pair);
+    window.addEventListener('resize', draw);
+    window.addEventListener('beforeprint', draw);
+    draw();
+  }
+
+  var hot = function (i) {
+    fig.classList.toggle('has-hot', i !== null);
+    pts.forEach(function (p) { p.classList.toggle('is-hot', p.dataset.i === i); });
+    links.forEach(function (l) { l.el.classList.toggle('is-hot', l.el.getAttribute('data-i') === i); });
+  };
+  pts.forEach(function (pt) {
+    pt.addEventListener('pointerenter', function () { hot(pt.dataset.i); });
+    pt.addEventListener('pointerleave', function () { hot(null); });
+  });
+
+  var buttons = fig.querySelectorAll('.corr-zoom .viewset-btn');
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      fig.classList.toggle('is-zoomed', btn.dataset.view === 'points');
+      buttons.forEach(function (b) {
+        b.classList.toggle('is-active', b === btn);
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+      follow(450);
+    });
+  });
+});
+
+// Highlight the section index entry for whatever is on screen.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.section-index a[href^="#"]'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.remove('is-active'); });
+      if (byId[e.target.id]) byId[e.target.id].classList.add('is-active');
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  Object.keys(byId).forEach(function (id) {
+    var s = document.getElementById(id);
+    if (s) obs.observe(s);
+  });
+})();
+</script>
+
+</body>
+</html>

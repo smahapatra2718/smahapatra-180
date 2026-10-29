@@ -1,0 +1,3 @@
+output 2807 x 4441
+nearest neighbor 0.331s
+bilinear 0.761s
